@@ -53,7 +53,7 @@
         >
           <el-input
             v-model="loginForm.username"
-            autocomplete="off"
+            autocomplete="username"
             class="google-input"
             placeholder="请输入用户名"
           >
@@ -69,7 +69,7 @@
           <el-input 
             v-model="loginForm.password" 
             :type="passwordVisible ? 'text' : 'password'" 
-            autocomplete="off"
+            autocomplete="current-password"
             class="google-input"
             placeholder="请输入密码"
             @keyup.enter="handleLogin"
@@ -90,7 +90,7 @@
         </el-form-item>
         <div class="form-footer">
           <el-checkbox v-model="rememberMe" class="remember-me">记住我</el-checkbox>
-          <a href="#" class="forgot-password">忘记密码?</a>
+          <a href="#" class="forgot-password" @click.prevent="showForgotPasswordDialog">忘记密码?</a>
         </div>
         <el-form-item>
           <el-button
@@ -108,7 +108,7 @@
 
 <script setup>
 import { reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
 import { usersApi } from '@/utils/api';
 import { User, Lock, View, Hide } from '@element-plus/icons-vue';
@@ -133,9 +133,29 @@ const rules = {
   ]
 };
 
+const showForgotPasswordDialog = () => {
+  ElMessageBox.alert(
+    '请联系系统管理员重置您的密码。',
+    '忘记密码',
+    {
+      confirmButtonText: '确定',
+      type: 'info',
+      center: true,
+    }
+  );
+};
+
 const handleLogin = () => {
   loginFormRef.value.validate((valid) => {
     if (valid) {
+      // 如果勾选了记住我，设置autocomplete属性
+      if (rememberMe.value) {
+        const usernameInput = document.querySelector('input[type="text"]');
+        const passwordInput = document.querySelector('input[type="password"]');
+        if (usernameInput) usernameInput.setAttribute('autocomplete', 'username');
+        if (passwordInput) passwordInput.setAttribute('autocomplete', 'current-password');
+      }
+      
       usersApi.login({
         username: loginForm.username,
         password: loginForm.password
