@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import MainLayout from '@/components/MainLayout.vue';
 import UserLogin from '@/components/UserLogin.vue';
 import { USER_ROLES, hasPermission } from '@/utils/permission';
+import { usersApi } from '@/utils/api';
 
 // 页面加载状态管理
 import NProgress from 'nprogress';
@@ -110,11 +111,37 @@ const router = createRouter({
 });
 
 // 路由前置守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // 开始加载进度条
   NProgress.start();
   
-  const isAuthenticated = !!localStorage.getItem('token');
+  // 初始化验证状态
+  let isAuthenticated = !!localStorage.getItem('token');
+  
+  // 如果有token但未确认登录状态，则验证token
+  if (isAuthenticated && to.meta.requiresAuth) {
+    try {
+      const response = await usersApi.checkAuth();
+      if (response.data.isLoggedIn) {
+        // 确认登录状态，更新用户信息
+        localStorage.setItem('username', response.data.username);
+        localStorage.setItem('userRole', response.data.role);
+      } else {
+        // token无效，清除本地存储
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('userRole');
+        isAuthenticated = false;
+      }
+    } catch (error) {
+      console.error('验证登录状态失败', error);
+      // 验证失败，清除本地存储
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      localStorage.removeItem('userRole');
+      isAuthenticated = false;
+    }
+  }
   
   // 如果路由需要认证
   if (to.meta.requiresAuth) {

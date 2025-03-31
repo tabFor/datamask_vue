@@ -24,7 +24,7 @@ export default defineComponent({
   methods: {
     async checkLoginStatus() {
       try {
-        const response = await request.get('/api/check-login');
+        const response = await request.get('/api/check-auth');
         
         if (!response.data.isLoggedIn) {
           // 未登录，跳转到登录页

@@ -222,14 +222,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { ElMessage, ElLoading } from 'element-plus';
-import axios from 'axios';
+import { Close } from '@element-plus/icons-vue';
 import AuditLogger from '@/utils/auditLogger';
-import { dynamicMaskingApi } from '@/utils/api';
+import request from '@/utils/request';
+import logger from '@/utils/logger';
 
-// API基础URL - 只用于兼容性和备用途径
-const baseURL = 'http://localhost:8081/api';
-
-// 固定数据库名
+// 固定数据库名称
 const DATABASE_NAME = 'datamask';
 
 // 表列表
@@ -329,7 +327,7 @@ const retryConnection = async () => {
   
   try {
     // 获取数据统计信息
-    const response = await axios.get(`${baseURL}/test-data/stats`);
+    const response = await request.get('/api/test-data/stats');
     if (response.data && response.data.success) {
       ElMessage.success('成功连接到数据库');
       
@@ -345,7 +343,7 @@ const retryConnection = async () => {
     const errorMessage = handleApiError(error);
     apiErrorMessage.value = errorMessage;
     showApiErrorDialog.value = true;
-    console.error('连接数据库失败:', error);
+    logger.error('连接数据库失败:', error);
   }
 };
 
@@ -353,7 +351,7 @@ const retryConnection = async () => {
 onMounted(async () => {
   try {
     // 获取数据统计信息
-    const response = await axios.get(`${baseURL}/test-data/stats`);
+    const response = await request.get('/api/test-data/stats');
     if (response.data && response.data.success) {
       ElMessage.success('成功连接到数据库');
       
@@ -372,7 +370,7 @@ onMounted(async () => {
     const errorMessage = handleApiError(error);
     apiErrorMessage.value = errorMessage;
     showApiErrorDialog.value = true;
-    console.error('连接数据库失败:', error);
+    logger.error('连接数据库失败:', error);
   }
 });
 
@@ -410,7 +408,8 @@ const handleSizeChange = (size) => {
 
 // 处理API错误
 const handleApiError = (error) => {
-  console.log('处理API错误:', {
+  // 记录详细错误信息
+  logger.error('处理API错误:', {
     error: error,
     response: error.response,
     request: error.request,
@@ -423,7 +422,7 @@ const handleApiError = (error) => {
     const status = error.response.status;
     const data = error.response.data;
     
-    console.log('服务器响应错误:', {
+    logger.error('服务器响应错误:', {
       status: status,
       data: data,
       headers: error.response.headers
@@ -451,7 +450,7 @@ const handleApiError = (error) => {
 
 // 执行查询
 const executeQuery = async () => {
-  console.log('开始执行查询，参数：', {
+  logger.debug('开始执行查询，参数：', {
     selectedTable: selectedTable.value,
     pageSize: pageSize.value,
     currentPage: currentPage.value,
@@ -475,21 +474,19 @@ const executeQuery = async () => {
     let activeRules = [];
     if (enableMasking.value) {
       activeRules = await fetchActiveRulesFromBackend();
-      console.log('当前激活的脱敏规则:', activeRules);
+      logger.debug('当前激活的脱敏规则:', activeRules);
     }
     
-    // 构建API URL，添加enableMasking参数
-    const apiUrl = `${baseURL}/test-data/${selectedTable.value}?page=${currentPage.value}&size=${pageSize.value}&enableMasking=${enableMasking.value}`;
-    
-    console.log('发送API请求:', {
-      url: apiUrl,
-      method: 'GET',
-      headers: axios.defaults.headers
-    });
-
     // 发送请求
-    const response = await axios.get(apiUrl);
-    console.log('API响应数据:', response.data);
+    const response = await request.get(`/api/test-data/${selectedTable.value}`, {
+      params: {
+        page: currentPage.value,
+        size: pageSize.value,
+        enableMasking: enableMasking.value
+      }
+    });
+    
+    logger.debug('API响应数据:', response.data);
     
     if (response.data) {
       // 处理分页数据
@@ -547,7 +544,7 @@ const executeQuery = async () => {
       ElMessage.error('查询失败: 响应数据为空');
     }
   } catch (error) {
-    console.log('API请求完整错误信息:', {
+    logger.error('API请求完整错误信息:', {
       message: error.message,
       status: error.response?.status,
       statusText: error.response?.statusText,
@@ -560,6 +557,116 @@ const executeQuery = async () => {
   } finally {
     loadingInstance.close();
     isLoading.value = false;
+  }
+};
+
+// 获取后端激活的脱敏规则
+const fetchActiveRulesFromBackend = async () => {
+  try {
+    const response = await request.get('/api/masking-rules/active');
+    
+    if (response.data) {
+      if (response.data.activeRuleIds) {
+        return response.data.activeRuleIds;
+      } else {
+        logger.warn('获取的激活脱敏规则为空');
+        return [];
+      }
+    } else {
+      logger.error('获取激活的脱敏规则失败: 响应数据为空');
+      return [];
+    }
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    logger.error('获取激活的脱敏规则出错:', errorMessage);
+    return [];
+  }
+};
+
+// 初始化时从后端获取脱敏规则
+const fetchRulesFromBackend = async () => {
+  try {
+    // 使用配置好的request实例
+    const response = await request.get('/api/masking-rules');
+    
+    if (response.data) {
+      logger.debug('获取脱敏规则成功:', response.data);
+      // 更新本地规则
+      if (response.data.rules) {
+        // 确保所有规则的数据库字段为datamask
+        maskingRules.value = response.data.rules.map(rule => ({
+          ...rule,
+          database: DATABASE_NAME
+        }));
+        displayedRules.value = maskingRules.value;
+        logger.debug('已从后端获取脱敏规则');
+      } else {
+        // 如果没有数据，确保本地规则为空数组
+        maskingRules.value = [];
+        displayedRules.value = [];
+        logger.warn('获取的脱敏规则为空');
+      }
+    } else {
+      logger.error('获取脱敏规则失败: 响应数据为空');
+      // 如果获取失败，确保本地规则为空数组
+      maskingRules.value = [];
+      displayedRules.value = [];
+    }
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    logger.error('获取脱敏规则出错:', errorMessage);
+    // 如果发生错误，确保本地规则为空数组
+    maskingRules.value = [];
+    displayedRules.value = [];
+  }
+};
+
+// 获取数据统计
+const fetchStats = async () => {
+  try {
+    // 检查token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      logger.warn('获取统计数据失败: 未找到认证token');
+      ElMessage.warning('您尚未登录或登录已过期，请先登录');
+      return false;
+    }
+    
+    logger.debug('开始请求统计数据，当前token:', token.substring(0, 20) + '...');
+    
+    // 使用request实例，它已配置了拦截器自动添加token
+    const response = await request.get('/api/test-data/stats');
+    
+    if (response.data && response.data.success) {
+      totalRecords.value = response.data.data.totalRecords || 0;
+      logger.debug('成功获取统计数据，总记录数:', totalRecords.value);
+      return true;
+    } else {
+      logger.warn('获取统计数据失败: 响应不成功', response.data);
+      return false;
+    }
+  } catch (error) {
+    logger.error('获取统计数据失败:', error);
+    // 输出详细错误信息
+    logger.error('错误详情:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      responseData: error.response?.data,
+      headers: error.response?.headers,
+      config: error.config
+    });
+    
+    const errorMsg = handleApiError(error);
+    logger.error('统计数据错误详情:', errorMsg);
+    
+    // 处理403错误
+    if (error.response && error.response.status === 403) {
+      ElMessage.warning('您的登录权限不足，请联系管理员或使用有权限的账号登录');
+      // 不要自动退出，而是让用户决定是否退出
+    }
+    
+    return false;
   }
 };
 
@@ -604,7 +711,7 @@ const editRule = (rule) => {
 const deleteRule = async (ruleId) => {
   try {
     loading.value = true;
-    const response = await axios.delete(`${baseURL}/masking-rules/${ruleId}`);
+    const response = await request.delete(`/api/masking-rules/${ruleId}`);
     
     if (response.data.success) {
       ElMessage.success('规则删除成功');
@@ -630,10 +737,10 @@ const deleteRule = async (ruleId) => {
     // 记录错误日志
     await AuditLogger.log(
       '动态脱敏',
-      `删除脱敏规则失败：${error.message}`,
-      '失败'
+      `删除脱敏规则错误：${error.message}`,
+      '错误'
     );
-    console.error('规则删除失败:', error);
+    logger.error('规则删除失败:', error);
   } finally {
     loading.value = false;
   }
@@ -744,19 +851,16 @@ const saveRule = () => {
 // 将脱敏规则发送到后端
 const sendRulesToBackend = async () => {
   try {
-    // 构建API URL - 使用批量保存API
-    const apiUrl = `${baseURL}/masking-rules/batch-wrapped`;
-    
     // 准备请求数据，符合MaskingRuleRequest格式
     const requestData = {
       rules: maskingRules.value
     };
     
     // 发送请求
-    const response = await axios.post(apiUrl, requestData);
+    const response = await request.post('/api/masking-rules/batch-wrapped', requestData);
     
     if (response.data) {
-      console.log('脱敏规则已同步到后端');
+      logger.debug('脱敏规则已同步到后端');
       
       // 更新本地规则列表，使用后端返回的规则（包含新ID）
       if (response.data.rules) {
@@ -766,92 +870,20 @@ const sendRulesToBackend = async () => {
       // 如果当前显示的是所有规则，则刷新显示
       if (!showOnlyActiveRules.value) {
         displayedRules.value = maskingRules.value;
-      } 
-      // 如果当前只显示激活的规则，则重新获取激活的规则
-      else {
-        const activeRules = await fetchActiveRulesFromBackend();
-        displayedRules.value = activeRules;
+      } else {
+        // 否则只显示激活的规则
+        updateDisplayedRules();
       }
       
-      // 显示成功消息
-      ElMessage.success(response.data.message || '脱敏规则已成功更新');
+      return true;
     } else {
-      console.error('同步脱敏规则失败: 响应数据为空');
-      ElMessage.error('同步脱敏规则失败: 响应数据为空');
+      logger.error('同步脱敏规则失败: 响应数据为空');
+      return false;
     }
   } catch (error) {
     const errorMessage = handleApiError(error);
-    console.error('同步脱敏规则出错:', errorMessage);
-    ElMessage.error('同步脱敏规则出错: ' + errorMessage);
-  }
-};
-
-// 初始化时从后端获取脱敏规则
-const fetchRulesFromBackend = async () => {
-  try {
-    // 构建API URL
-    const apiUrl = `${baseURL}/masking-rules`;
-    
-    // 发送请求
-    const response = await axios.get(apiUrl);
-    
-    if (response.data) {
-      console.log('获取脱敏规则成功:', response.data);
-      // 更新本地规则
-      if (response.data.rules) {
-        // 确保所有规则的数据库字段为datamask
-        maskingRules.value = response.data.rules.map(rule => ({
-          ...rule,
-          database: DATABASE_NAME
-        }));
-        displayedRules.value = maskingRules.value;
-        console.log('已从后端获取脱敏规则');
-      } else {
-        // 如果没有数据，确保本地规则为空数组
-        maskingRules.value = [];
-        displayedRules.value = [];
-        console.warn('获取的脱敏规则为空');
-      }
-    } else {
-      console.error('获取脱敏规则失败: 响应数据为空');
-      // 如果获取失败，确保本地规则为空数组
-      maskingRules.value = [];
-      displayedRules.value = [];
-    }
-  } catch (error) {
-    const errorMessage = handleApiError(error);
-    console.error('获取脱敏规则出错:', errorMessage);
-    // 如果发生错误，确保本地规则为空数组
-    maskingRules.value = [];
-    displayedRules.value = [];
-  }
-};
-
-// 获取激活的脱敏规则
-const fetchActiveRulesFromBackend = async () => {
-  try {
-    // 构建API URL
-    const apiUrl = `${baseURL}/masking-rules/active`;
-    
-    // 发送请求
-    const response = await axios.get(apiUrl);
-    
-    if (response.data) {
-      // 返回激活的规则
-      if (response.data.rules) {
-        return response.data.rules;
-      } else {
-        console.warn('获取的激活脱敏规则为空');
-        return [];
-      }
-    } else {
-      console.error('获取激活的脱敏规则失败: 响应数据为空');
-      return [];
-    }
-  } catch (error) {
-    const errorMessage = handleApiError(error);
-    console.error('获取激活的脱敏规则出错:', errorMessage);
-    return [];
+    logger.error('同步脱敏规则出错:', errorMessage);
+    return false;
   }
 };
 
@@ -876,27 +908,9 @@ const toggleActiveRulesDisplay = async () => {
 
 const loading = ref(false);
 
-// 获取统计数据
-const fetchStats = async () => {
-  try {
-    // 使用动态脱敏API获取统计数据
-    const response = await dynamicMaskingApi.executeQuery({ type: 'stats' });
-    
-    if (response.data && response.data.success) {
-      // 处理统计数据
-      totalRecords.value = response.data.totalRecords || 0;
-      console.log('成功获取统计数据，总记录数:', totalRecords.value);
-      return true;
-    } else {
-      console.warn('获取统计数据失败: 响应不成功');
-      return false;
-    }
-  } catch (error) {
-    console.error('获取统计数据失败:', error);
-    const errorMsg = handleApiError(error);
-    console.error('统计数据错误详情:', errorMsg);
-    return false;
-  }
+// 更新显示的规则
+const updateDisplayedRules = () => {
+  displayedRules.value = maskingRules.value.filter(rule => rule.active);
 };
 </script>
 

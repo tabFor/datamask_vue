@@ -106,7 +106,9 @@ const breadcrumbItems = computed(() => {
 // 处理退出登录
 const handleLogout = async () => {
   try {
+    // 尝试调用登出接口
     await usersApi.logout();
+    // 无论接口是否调用成功，都清除本地存储的用户信息
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('userRole');

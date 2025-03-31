@@ -1,9 +1,9 @@
-import axios from 'axios';
+import request from './request';
 
 class AuditLogger {
   static async log(operation, details, status = '成功') {
     try {
-      await axios.post('/api/audit-logs', {
+      await request.post('/api/audit-logs', {
         username: localStorage.getItem('username') || '未知用户',
         operation,
         details,

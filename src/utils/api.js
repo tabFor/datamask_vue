@@ -138,7 +138,12 @@ export const dynamicMaskingApi = {
 export const usersApi = {
   // 用户登录
   login(data) {
-    return request.post('/login', data)
+    return request.post('/api/login', data)
+  },
+  
+  // 检查登录状态
+  checkAuth() {
+    return request.get('/api/check-auth')
   },
   
   // 用户登出

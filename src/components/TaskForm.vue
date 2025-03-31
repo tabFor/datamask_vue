@@ -357,8 +357,9 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { databaseApi, rulesApi, tasksApi } from '@/utils/api';
+import { databaseApi, rulesApi } from '@/utils/api';
 import AISuggestionDialog from './AISuggestionDialog.vue';
+import logger from '@/utils/logger';
 
 const props = defineProps({
   initialData: {
@@ -553,15 +554,12 @@ const fetchRules = async () => {
 // 获取规则映射模板
 const fetchRulesMappingTemplate = async () => {
   try {
-    const response = await tasksApi.getRulesMappingTemplate();
-    if (response.data.success) {
-      rulesMappingTemplate.value = response.data.data;
-      console.log('获取规则映射模板成功:', rulesMappingTemplate.value);
-    } else {
-      console.error('获取规则映射模板失败:', response.data.message);
-    }
+    const response = await rulesApi.getRulesMappingTemplates();
+    rulesMappingTemplate.value = response.data;
+    logger.debug('获取规则映射模板成功:', rulesMappingTemplate.value);
   } catch (error) {
-    console.error('获取规则映射模板异常:', error);
+    ElMessage.error('获取规则映射模板失败');
+    logger.error('获取规则映射模板失败', error);
   }
 };
 
@@ -645,9 +643,9 @@ const getRecommendedRuleForColumn = (column) => {
 const autoRecommendRuleMappings = () => {
   if (sensitiveColumns.value.length === 0 || availableRules.value.length === 0) return;
   
-  console.log("开始自动推荐规则映射...");
-  console.log("敏感列数据:", JSON.stringify(sensitiveColumns.value, null, 2));
-  console.log("可用规则数据:", JSON.stringify(availableRules.value.map(r => ({
+  logger.info("开始自动推荐规则映射...");
+  logger.debug("敏感列数据:", JSON.stringify(sensitiveColumns.value, null, 2));
+  logger.debug("可用规则数据:", JSON.stringify(availableRules.value.map(r => ({
     ruleId: r.ruleId,
     name: r.name,
     type: r.type,
@@ -665,22 +663,22 @@ const autoRecommendRuleMappings = () => {
       // 传递整个column对象而不仅仅是列名
       const recommendedRuleId = getRecommendedRuleForColumn(column);
       if (recommendedRuleId) {
-        console.log(`为列 ${columnName} 推荐规则: ${recommendedRuleId}`);
+        logger.debug(`为列 ${columnName} 推荐规则: ${recommendedRuleId}`);
         newMappings[columnName] = recommendedRuleId;
         // 确保规则已被选中
         if (!formData.rules.includes(recommendedRuleId)) {
           formData.rules.push(recommendedRuleId);
         }
       } else {
-        console.log(`未能为列 ${columnName} 找到合适的规则`);
+        logger.debug(`未能为列 ${columnName} 找到合适的规则`);
       }
     } else {
-      console.log(`列 ${columnName} 已有规则设置，跳过推荐`);
+      logger.debug(`列 ${columnName} 已有规则设置，跳过推荐`);
     }
   });
   
   formData.columnMappings = newMappings;
-  console.log("规则映射结果:", formData.columnMappings);
+  logger.debug("规则映射结果:", formData.columnMappings);
 };
 
 // 获取表字段
@@ -721,8 +719,8 @@ const fetchTableColumns = async () => {
       
       // 获取敏感数据检测结果
       try {
-        console.log('开始检测敏感数据，表名:', formData.tableName);
-        console.log('当前数据库连接信息:', {
+        logger.info('开始检测敏感数据，表名:', formData.tableName);
+        logger.debug('当前数据库连接信息:', {
           dbType: formData.dbType,
           host: formData.host,
           port: formData.port,
@@ -731,24 +729,24 @@ const fetchTableColumns = async () => {
         });
         
         const sensitiveResponse = await databaseApi.detectTableSensitiveColumns(formData.tableName);
-        console.log('敏感数据检测API响应状态:', sensitiveResponse.status);
-        console.log('敏感数据检测API响应头:', sensitiveResponse.headers);
-        console.log('敏感数据检测响应完整数据:', sensitiveResponse);
+        logger.debug('敏感数据检测API响应状态:', sensitiveResponse.status);
+        logger.debug('敏感数据检测API响应头:', sensitiveResponse.headers);
+        logger.debug('敏感数据检测响应完整数据:', sensitiveResponse);
         
         // 检查响应状态码
         if (sensitiveResponse.status === 200) {
-          console.log('敏感数据检测成功，数据:', JSON.stringify(sensitiveResponse.data, null, 2));
+          logger.info('敏感数据检测成功，数据:', JSON.stringify(sensitiveResponse.data, null, 2));
           
           // 验证接收到的数据格式
           if (Array.isArray(sensitiveResponse.data)) {
-            console.log(`收到 ${sensitiveResponse.data.length} 个敏感列`);
+            logger.debug(`收到 ${sensitiveResponse.data.length} 个敏感列`);
             
             // 检查数据的结构
             if (sensitiveResponse.data.length > 0) {
-              console.log('第一个敏感列示例:', JSON.stringify(sensitiveResponse.data[0], null, 2));
+              logger.debug('第一个敏感列示例:', JSON.stringify(sensitiveResponse.data[0], null, 2));
             }
           } else {
-            console.warn('敏感列数据不是数组格式:', typeof sensitiveResponse.data);
+            logger.warn('敏感列数据不是数组格式:', typeof sensitiveResponse.data);
           }
           
           sensitiveColumns.value = sensitiveResponse.data || [];
@@ -757,12 +755,12 @@ const fetchTableColumns = async () => {
           // 自动推荐规则映射
           autoRecommendRuleMappings();
         } else {
-          console.error('敏感数据检测失败:', sensitiveResponse.statusText);
+          logger.error('敏感数据检测失败:', sensitiveResponse.statusText);
           ElMessage.error('获取敏感数据检测结果失败');
         }
       } catch (error) {
-        console.error('敏感数据检测异常:', error);
-        console.error('错误详情:', {
+        logger.error('敏感数据检测异常:', error);
+        logger.error('错误详情:', {
           message: error.message,
           stack: error.stack,
           response: error.response?.data
@@ -777,7 +775,7 @@ const fetchTableColumns = async () => {
       ElMessage.error(columnsResponse.data.message || '获取表字段失败');
     }
   } catch (error) {
-    console.error('获取表字段或敏感数据检测失败:', error);
+    logger.error('获取表字段或敏感数据检测失败:', error);
     ElMessage.error('获取表字段或敏感数据检测失败，请检查连接信息');
   }
 };
@@ -840,7 +838,7 @@ const submitForm = () => {
 
       emit('submit', submitData);
     } catch (error) {
-      console.error('提交表单失败:', error);
+      logger.error('提交表单失败:', error);
     } finally {
       submitting.value = false;
     }
@@ -904,7 +902,7 @@ const testConnection = async () => {
       ElMessage.error(response.data.message || '数据库连接失败');
     }
   } catch (error) {
-    console.error('测试数据库连接失败:', error);
+    logger.error('测试数据库连接失败:', error);
     ElMessage.error('数据库连接失败，请检查连接信息');
   } finally {
     testingConnection.value = false;
