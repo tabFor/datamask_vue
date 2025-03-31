@@ -1,6 +1,10 @@
 <template>
   <div id="app">
-    <router-view />
+    <router-view v-slot="{ Component }">
+      <transition name="fade" mode="out-in">
+        <component :is="Component" />
+      </transition>
+    </router-view>
   </div>
 </template>
 
@@ -51,6 +55,8 @@ export default defineComponent({
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  /* 添加背景默认值，减少页面重绘时的闪烁 */
+  background-color: #f5f7fa;
 }
 
 /* 全局样式 */
@@ -92,6 +98,19 @@ export default defineComponent({
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* 添加更平滑的过渡效果，减少闪烁 */
+.router-view-transition {
+  position: absolute;
+  width: 100%;
+  transition: opacity 0.3s ease;
+}
+
+/* 防止FOUC (Flash of Unstyled Content) */
+html {
+  visibility: visible;
+  opacity: 1;
 }
 
 /* 全局卡片样式 */

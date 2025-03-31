@@ -12,6 +12,8 @@
     "axios": "^1.8.1",
     "core-js": "^3.8.3",
     "element-plus": "^2.9.3",
+    "nprogress": "^0.2.0",
+    "prerender-spa-plugin": "^3.4.0",
     "tdesign-vue-next": "^1.11.5",
     "vue": "^3.2.13",
     "vue-router": "^4.5.0"

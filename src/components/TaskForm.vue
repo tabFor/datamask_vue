@@ -566,24 +566,64 @@ const fetchRulesMappingTemplate = async () => {
 };
 
 // 根据列名推荐规则
-const getRecommendedRuleForColumn = (columnName) => {
-  if (!rulesMappingTemplate.value) return null;
-  
-  const normalizedColumnName = columnName.toLowerCase();
-  
-  // 检查模板中是否有针对此列的推荐
-  if (rulesMappingTemplate.value.columnRuleMappings && 
-      rulesMappingTemplate.value.columnRuleMappings[normalizedColumnName]) {
-    // 查找被标记为推荐的规则
-    const recommendedRules = rulesMappingTemplate.value.columnRuleMappings[normalizedColumnName]
-      .filter(rule => rule.recommended);
+const getRecommendedRuleForColumn = (column) => {
+  // 如果传入的是字符串（列名），创建一个简单对象
+  const sensitiveColumn = typeof column === 'string' 
+    ? { columnName: column } 
+    : column;
     
-    if (recommendedRules.length > 0) {
-      return recommendedRules[0].ruleId;
+  if (!sensitiveColumn) return null;
+  
+  // 先尝试使用sensitiveType匹配
+  if (sensitiveColumn.sensitiveType) {
+    const sensitiveType = sensitiveColumn.sensitiveType;
+    
+    if (sensitiveType === '姓名') {
+      return availableRules.value.find(r => r.type === 'NAME')?.ruleId;
+    } else if (sensitiveType.includes('手机') || sensitiveType.includes('电话')) {
+      return availableRules.value.find(r => r.type === 'PHONE')?.ruleId;
+    } else if (sensitiveType.includes('邮箱')) {
+      return availableRules.value.find(r => r.type === 'EMAIL')?.ruleId;
+    } else if (sensitiveType.includes('地址')) {
+      return availableRules.value.find(r => r.type === 'ADDRESS')?.ruleId;
+    } else if (sensitiveType.includes('身份证')) {
+      return availableRules.value.find(r => r.type === 'ID_CARD')?.ruleId;
+    } else if (sensitiveType.includes('银行卡') || sensitiveType.includes('信用卡')) {
+      return availableRules.value.find(r => r.type === 'BANK_CARD')?.ruleId;
     }
   }
   
-  // 简单的规则匹配逻辑
+  // 尝试使用maskingRule匹配
+  if (sensitiveColumn.maskingRule) {
+    const matchingRule = availableRules.value.find(
+      r => r.description?.includes(sensitiveColumn.maskingRule) || 
+           sensitiveColumn.maskingRule.includes(r.description)
+    );
+    if (matchingRule) {
+      return matchingRule.ruleId;
+    }
+  }
+  
+  // 回退到使用模板
+  if (rulesMappingTemplate.value) {
+    const normalizedColumnName = sensitiveColumn.columnName.toLowerCase();
+    
+    // 检查模板中是否有针对此列的推荐
+    if (rulesMappingTemplate.value.columnRuleMappings && 
+        rulesMappingTemplate.value.columnRuleMappings[normalizedColumnName]) {
+      // 查找被标记为推荐的规则
+      const recommendedRules = rulesMappingTemplate.value.columnRuleMappings[normalizedColumnName]
+        .filter(rule => rule.recommended);
+      
+      if (recommendedRules.length > 0) {
+        return recommendedRules[0].ruleId;
+      }
+    }
+  }
+  
+  // 最后回退到简单的列名匹配
+  const normalizedColumnName = sensitiveColumn.columnName.toLowerCase();
+  
   if (normalizedColumnName.includes('phone') || normalizedColumnName.includes('mobile')) {
     return availableRules.value.find(r => r.type === 'PHONE')?.ruleId;
   } else if (normalizedColumnName.includes('name')) {
@@ -605,6 +645,15 @@ const getRecommendedRuleForColumn = (columnName) => {
 const autoRecommendRuleMappings = () => {
   if (sensitiveColumns.value.length === 0 || availableRules.value.length === 0) return;
   
+  console.log("开始自动推荐规则映射...");
+  console.log("敏感列数据:", JSON.stringify(sensitiveColumns.value, null, 2));
+  console.log("可用规则数据:", JSON.stringify(availableRules.value.map(r => ({
+    ruleId: r.ruleId,
+    name: r.name,
+    type: r.type,
+    description: r.description
+  })), null, 2));
+  
   const newMappings = { ...formData.columnMappings };
   
   // 为敏感列推荐规则
@@ -613,18 +662,25 @@ const autoRecommendRuleMappings = () => {
     
     // 如果还没有为此列设置规则，则尝试推荐
     if (!newMappings[columnName]) {
-      const recommendedRuleId = getRecommendedRuleForColumn(columnName);
+      // 传递整个column对象而不仅仅是列名
+      const recommendedRuleId = getRecommendedRuleForColumn(column);
       if (recommendedRuleId) {
+        console.log(`为列 ${columnName} 推荐规则: ${recommendedRuleId}`);
         newMappings[columnName] = recommendedRuleId;
         // 确保规则已被选中
         if (!formData.rules.includes(recommendedRuleId)) {
           formData.rules.push(recommendedRuleId);
         }
+      } else {
+        console.log(`未能为列 ${columnName} 找到合适的规则`);
       }
+    } else {
+      console.log(`列 ${columnName} 已有规则设置，跳过推荐`);
     }
   });
   
   formData.columnMappings = newMappings;
+  console.log("规则映射结果:", formData.columnMappings);
 };
 
 // 获取表字段
@@ -675,11 +731,26 @@ const fetchTableColumns = async () => {
         });
         
         const sensitiveResponse = await databaseApi.detectTableSensitiveColumns(formData.tableName);
-        console.log('敏感数据检测响应:', sensitiveResponse);
+        console.log('敏感数据检测API响应状态:', sensitiveResponse.status);
+        console.log('敏感数据检测API响应头:', sensitiveResponse.headers);
+        console.log('敏感数据检测响应完整数据:', sensitiveResponse);
         
         // 检查响应状态码
         if (sensitiveResponse.status === 200) {
-          console.log('敏感数据检测成功，数据:', sensitiveResponse.data);
+          console.log('敏感数据检测成功，数据:', JSON.stringify(sensitiveResponse.data, null, 2));
+          
+          // 验证接收到的数据格式
+          if (Array.isArray(sensitiveResponse.data)) {
+            console.log(`收到 ${sensitiveResponse.data.length} 个敏感列`);
+            
+            // 检查数据的结构
+            if (sensitiveResponse.data.length > 0) {
+              console.log('第一个敏感列示例:', JSON.stringify(sensitiveResponse.data[0], null, 2));
+            }
+          } else {
+            console.warn('敏感列数据不是数组格式:', typeof sensitiveResponse.data);
+          }
+          
           sensitiveColumns.value = sensitiveResponse.data || [];
           formData.sensitiveColumns = sensitiveColumns.value;
           

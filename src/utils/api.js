@@ -132,4 +132,70 @@ export const dynamicMaskingApi = {
   executeQuery(data) {
     return request.post('/api/dynamic/masking/query', data)
   }
+}
+
+// 用户管理相关API
+export const usersApi = {
+  // 用户登录
+  login(data) {
+    return request.post('/login', data)
+  },
+  
+  // 用户登出
+  logout() {
+    return request.post('/api/auth/logout')
+  },
+  
+  // 获取用户列表
+  getUsers() {
+    return request.get('/api/users')
+  },
+  
+  // 获取单个用户
+  getUser(userId) {
+    return request.get(`/api/users/${userId}`)
+  },
+  
+  // 创建用户
+  createUser(data) {
+    return request.post('/api/users', data)
+  },
+  
+  // 更新用户
+  updateUser(userId, data) {
+    return request.put(`/api/users/${userId}`, data)
+  },
+  
+  // 删除用户
+  deleteUser(userId) {
+    return request.delete(`/api/users/${userId}`)
+  }
+}
+
+// 角色管理相关API
+export const rolesApi = {
+  // 获取所有角色
+  getRoles() {
+    return request.get('/api/roles')
+  },
+  
+  // 获取角色详情
+  getRole(roleId) {
+    return request.get(`/api/roles/${roleId}`)
+  },
+  
+  // 给用户分配角色
+  assignRole(userId, data) {
+    return request.post(`/api/users/${userId}/roles`, data)
+  },
+  
+  // 移除用户角色
+  removeRole(userId, roleId) {
+    return request.delete(`/api/users/${userId}/roles/${roleId}`)
+  },
+  
+  // 查询用户角色
+  getUserRoles(userId) {
+    return request.get(`/api/users/${userId}/roles`)
+  }
 } 

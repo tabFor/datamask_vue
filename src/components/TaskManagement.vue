@@ -100,6 +100,24 @@
           label="执行时间"
           width="180"
         />
+        <el-table-column
+          label="进度"
+          width="200"
+        >
+          <template #default="scope">
+            <div v-if="scope.row.status === '进行中'" class="progress-container">
+              <el-progress 
+                :percentage="scope.row.progress || 0"
+                :format="(p) => p + '%'"
+                :stroke-width="18"
+                class="task-progress"
+              />
+            </div>
+            <span v-else-if="scope.row.status === '已完成'">100%</span>
+            <span v-else-if="scope.row.status === '失败'">任务失败</span>
+            <span v-else>0%</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="scope">
             <div class="action-buttons">
@@ -155,9 +173,11 @@
       :close-on-click-modal="false"
       class="filter-dialog"
       :show-close="false"
+      top="5vh"
+      :append-to-body="true"
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header dark">
           <span class="dialog-title">{{ isEditMode ? '编辑识别任务' : '创建识别任务' }}</span>
           <el-button
             class="close-button"
@@ -168,12 +188,14 @@
           </el-button>
         </div>
       </template>
-      <task-form
-        :initial-data="currentTask"
-        :is-edit="isEditMode"
-        @submit="handleTaskSubmit"
-        @cancel="createTaskDialogVisible = false"
-      />
+      <el-scrollbar height="60vh" max-height="60vh">
+        <task-form
+          :initial-data="currentTask"
+          :is-edit="isEditMode"
+          @submit="handleTaskSubmit"
+          @cancel="createTaskDialogVisible = false"
+        />
+      </el-scrollbar>
     </el-dialog>
   </div>
 </template>
@@ -362,7 +384,7 @@ const executeTask = async (task) => {
       tasks.value[taskIndex] = {
         ...tasks.value[taskIndex],
         status: '进行中',
-        progress: 70 // 设置初始进度
+        progress: 0 // 设置初始进度为0
       };
     }
 
@@ -405,45 +427,81 @@ const startPollingTaskStatus = async (taskId) => {
     clearInterval(pollingTimer);
   }
   
+  // 创建一个随时间增长的假进度值
+  let fakeProgress = 0;
+  
   pollingTimer = setInterval(async () => {
     try {
-      const response = await tasksApi.getTask(taskId);
-      if (response.data.code === 200) {
-        const taskData = response.data.data;
-        const taskStatus = taskData.status;
-        
-        // 更新任务列表中的任务状态
-        const taskIndex = tasks.value.findIndex(t => t.id === taskId);
-        if (taskIndex !== -1) {
+      // 先更新假进度，让用户看到变化
+      const taskIndex = tasks.value.findIndex(t => t.id === taskId);
+      if (taskIndex !== -1 && tasks.value[taskIndex].status === '进行中') {
+        // 生成更加真实的进度增长，速度减慢
+        if (fakeProgress < 95) {
+          // 更慢的进度增长速率
+          const increment = fakeProgress < 20 ? 1 : 
+                          fakeProgress < 40 ? 0.8 : 
+                          fakeProgress < 60 ? 0.6 : 
+                          fakeProgress < 80 ? 0.4 : 0.2;
+          fakeProgress += increment;
+          
           tasks.value[taskIndex] = {
             ...tasks.value[taskIndex],
-            ...taskData,
-            // 如果是进行中状态，添加一个假的进度值
-            progress: taskStatus === '进行中' ? Math.floor(Math.random() * 30 + 70) : undefined
+            progress: Math.round(fakeProgress) // 四舍五入取整数
           };
         }
-        
-        // 如果任务完成或失败，停止轮询
-        if (taskStatus === '已完成' || taskStatus === '失败') {
-          clearInterval(pollingTimer);
-          pollingTimer = null;
+      }
+      
+      // 获取真实任务状态 - 减少查询频率，让进度条有更多时间显示
+      if (Math.random() > 0.7) { // 只有30%的概率去查询真实任务状态
+        const response = await tasksApi.getTask(taskId);
+        if (response.data.code === 200) {
+          const taskData = response.data.data;
+          const taskStatus = taskData.status;
           
-          // 更新任务的轮询状态
+          // 更新任务列表中的任务状态
           if (taskIndex !== -1) {
-            tasks.value[taskIndex].isPolling = false;
-          }
-          
-          // 根据任务状态显示不同的消息
-          if (taskStatus === '已完成') {
-            ElMessage.success({
-              message: `任务执行完成，共处理 ${taskData.processedRecords || 0} 条记录`,
-              duration: 5000
-            });
-          } else {
-            ElMessage.error({
-              message: `任务执行失败：${taskData.errorMessage || '未知错误'}`,
-              duration: 5000
-            });
+            // 如果任务已完成但进度没到90%，先让进度追赶到90%再设置完成
+            if (taskStatus === '已完成' && fakeProgress < 90) {
+              fakeProgress = 90;
+              tasks.value[taskIndex] = {
+                ...tasks.value[taskIndex],
+                ...taskData,
+                status: '进行中', // 暂时保持进行中状态
+                progress: Math.round(fakeProgress)
+              };
+            } else {
+              tasks.value[taskIndex] = {
+                ...tasks.value[taskIndex],
+                ...taskData,
+                // 保持假进度值
+                progress: taskStatus === '进行中' ? Math.round(fakeProgress) : 
+                        taskStatus === '已完成' ? 100 : undefined
+              };
+              
+              // 如果任务完成或失败，且进度已达到95%以上，停止轮询
+              if ((taskStatus === '已完成' || taskStatus === '失败') && fakeProgress >= 95) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+                
+                // 更新任务的轮询状态
+                if (taskIndex !== -1) {
+                  tasks.value[taskIndex].isPolling = false;
+                }
+                
+                // 根据任务状态显示不同的消息
+                if (taskStatus === '已完成') {
+                  ElMessage.success({
+                    message: `任务执行完成，共处理 ${taskData.processedRecords || 0} 条记录`,
+                    duration: 5000
+                  });
+                } else {
+                  ElMessage.error({
+                    message: `任务执行失败：${taskData.errorMessage || '未知错误'}`,
+                    duration: 5000
+                  });
+                }
+              }
+            }
           }
         }
       }
@@ -460,7 +518,7 @@ const startPollingTaskStatus = async (taskId) => {
       
       ElMessage.error('获取任务状态失败，请刷新页面重试');
     }
-  }, 3000);
+  }, 500); // 更频繁地更新进度，0.5秒一次，但增量更小
 };
 
 // 开始自动刷新
@@ -880,6 +938,10 @@ watch(searchKeyword, (newVal, oldVal) => {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  margin: 0 auto;
 }
 
 .dialog-header {
@@ -889,6 +951,18 @@ watch(searchKeyword, (newVal, oldVal) => {
   padding: 20px 24px;
   background: #fff;
   border-bottom: 1px solid #e4e7ed;
+}
+
+.dialog-header.dark {
+  background: #1a237e;
+}
+
+.dialog-header.dark .dialog-title {
+  color: #ffffff;
+}
+
+.dialog-header.dark .close-button {
+  color: #ffffff;
 }
 
 .dialog-title {
@@ -915,10 +989,49 @@ watch(searchKeyword, (newVal, oldVal) => {
 }
 
 .filter-dialog :deep(.el-dialog__body) {
-  padding: 24px;
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
 }
 
 .filter-dialog :deep(.el-dialog__footer) {
   padding: 0;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #f5f7fa;
+  border-top: 1px solid #e4e7ed;
+}
+
+.dialog-footer .el-button {
+  min-width: 80px;
+}
+
+.progress-container {
+  width: 100%;
+}
+
+.task-progress {
+  margin: 0;
+}
+
+.task-progress :deep(.el-progress-bar__outer) {
+  border-radius: 4px;
+  background-color: #f0f0f0;
+}
+
+.task-progress :deep(.el-progress-bar__inner) {
+  border-radius: 4px;
+  background-color: #1a237e;
+  transition: width 0.3s ease;
+}
+
+.task-progress :deep(.el-progress__text) {
+  color: #1a237e;
+  font-weight: 500;
 }
 </style>

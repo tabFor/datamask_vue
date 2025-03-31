@@ -171,9 +171,11 @@
       :close-on-click-modal="false"
       class="filter-dialog"
       :show-close="false"
+      top="5vh"
+      :append-to-body="true"
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header dark">
           <span class="dialog-title">{{ isEditing ? '编辑规则' : '新增规则' }}</span>
           <el-button
             class="close-button"
@@ -184,95 +186,97 @@
           </el-button>
         </div>
       </template>
-      <div class="form-container">
-        <el-form :model="currentRule" label-width="100px" class="filter-form">
-          <el-form-item 
-            label="规则ID" 
-            required
-          >
-            <el-input 
-              v-model="currentRule.ruleId" 
-              :disabled="isEditing" 
-              placeholder="请输入规则ID，如 phone_mask"
-              class="custom-input"
-            />
-          </el-form-item>
-          <el-form-item label="规则名称" required>
-            <el-input 
-              v-model="currentRule.name"
-              class="custom-input"
-            />
-          </el-form-item>
-          <el-form-item label="描述" required>
-            <el-input 
-              v-model="currentRule.description" 
-              type="textarea" 
-              :rows="3"
-              class="custom-input"
-            />
-          </el-form-item>
-          <el-form-item label="类型" required>
-            <el-select 
-              v-model="currentRule.type" 
-              placeholder="选择类型"
-              class="custom-select"
+      <el-scrollbar height="60vh" max-height="60vh">
+        <div class="form-container">
+          <el-form :model="currentRule" label-width="100px" class="filter-form">
+            <el-form-item 
+              label="规则ID" 
+              required
             >
-              <el-option label="手机号码" value="PHONE" />
-              <el-option label="身份证号" value="ID_CARD" />
-              <el-option label="姓名" value="NAME" />
-              <el-option label="邮箱" value="EMAIL" />
-              <el-option label="银行卡号" value="BANK_CARD" />
-              <el-option label="地址" value="ADDRESS" />
-              <el-option label="自定义" value="CUSTOM" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="脱敏模式" required>
-            <el-select 
-              v-model="currentRule.pattern" 
-              placeholder="选择脱敏模式"
-              class="custom-select"
+              <el-input 
+                v-model="currentRule.ruleId" 
+                :disabled="isEditing" 
+                placeholder="请输入规则ID，如 phone_mask"
+                class="custom-input"
+              />
+            </el-form-item>
+            <el-form-item label="规则名称" required>
+              <el-input 
+                v-model="currentRule.name"
+                class="custom-input"
+              />
+            </el-form-item>
+            <el-form-item label="描述" required>
+              <el-input 
+                v-model="currentRule.description" 
+                type="textarea" 
+                :rows="3"
+                class="custom-input"
+              />
+            </el-form-item>
+            <el-form-item label="类型" required>
+              <el-select 
+                v-model="currentRule.type" 
+                placeholder="选择类型"
+                class="custom-select"
+              >
+                <el-option label="手机号码" value="PHONE" />
+                <el-option label="身份证号" value="ID_CARD" />
+                <el-option label="姓名" value="NAME" />
+                <el-option label="邮箱" value="EMAIL" />
+                <el-option label="银行卡号" value="BANK_CARD" />
+                <el-option label="地址" value="ADDRESS" />
+                <el-option label="自定义" value="CUSTOM" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="脱敏模式" required>
+              <el-select 
+                v-model="currentRule.pattern" 
+                placeholder="选择脱敏模式"
+                class="custom-select"
+              >
+                <el-option label="保留前缀和后缀" value="KEEP_PREFIX_SUFFIX" />
+                <el-option label="仅保留前缀" value="KEEP_PREFIX" />
+                <el-option label="仅保留后缀" value="KEEP_SUFFIX" />
+                <el-option label="邮箱脱敏" value="EMAIL_MASK" />
+                <el-option label="地址脱敏" value="ADDRESS_MASK" />
+                <el-option label="完全脱敏" value="FULL_MASK" />
+              </el-select>
+            </el-form-item>
+            <el-form-item 
+              v-if="showPrefixInput"
+              label="前缀长度"
             >
-              <el-option label="保留前缀和后缀" value="KEEP_PREFIX_SUFFIX" />
-              <el-option label="仅保留前缀" value="KEEP_PREFIX" />
-              <el-option label="仅保留后缀" value="KEEP_SUFFIX" />
-              <el-option label="邮箱脱敏" value="EMAIL_MASK" />
-              <el-option label="地址脱敏" value="ADDRESS_MASK" />
-              <el-option label="完全脱敏" value="FULL_MASK" />
-            </el-select>
-          </el-form-item>
-          <el-form-item 
-            v-if="showPrefixInput"
-            label="前缀长度"
-          >
-            <el-input-number 
-              v-model="currentRule.prefixLength" 
-              :min="0" 
-              :max="10"
-              class="custom-input-number"
-              controls-position="right"
-            />
-          </el-form-item>
-          <el-form-item 
-            v-if="showSuffixInput"
-            label="后缀长度"
-          >
-            <el-input-number 
-              v-model="currentRule.suffixLength" 
-              :min="0" 
-              :max="10"
-              class="custom-input-number"
-              controls-position="right"
-            />
-          </el-form-item>
-          <el-form-item label="替换字符">
-            <el-input 
-              v-model="currentRule.replacementChar" 
-              maxlength="1"
-              class="custom-input"
-            />
-          </el-form-item>
-        </el-form>
-      </div>
+              <el-input-number 
+                v-model="currentRule.prefixLength" 
+                :min="0" 
+                :max="10"
+                class="custom-input-number"
+                controls-position="right"
+              />
+            </el-form-item>
+            <el-form-item 
+              v-if="showSuffixInput"
+              label="后缀长度"
+            >
+              <el-input-number 
+                v-model="currentRule.suffixLength" 
+                :min="0" 
+                :max="10"
+                class="custom-input-number"
+                controls-position="right"
+              />
+            </el-form-item>
+            <el-form-item label="替换字符">
+              <el-input 
+                v-model="currentRule.replacementChar" 
+                maxlength="1"
+                class="custom-input"
+              />
+            </el-form-item>
+          </el-form>
+        </div>
+      </el-scrollbar>
       <template #footer>
         <div class="dialog-footer">
           <el-button 
@@ -649,25 +653,54 @@ onBeforeUnmount(() => {
 <style scoped>
 .rule-management {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   padding: 24px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header-actions {
   margin-bottom: 24px;
+  animation: slideIn 0.6s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .title-section h2 {
   margin: 0;
-  color: white;
-  font-size: 28px;
-  font-weight: 600;
+  color: #1a237e;
+  font-size: 34px;
+  font-weight: 400;
+  letter-spacing: -0.25px;
+  background: linear-gradient(45deg, #1a237e, #3949ab);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
   margin: 8px 0 0;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 16px;
+  color: #5f6368;
+  font-size: 14px;
+  font-weight: 400;
 }
 
 .main-content {
@@ -676,12 +709,18 @@ onBeforeUnmount(() => {
 }
 
 .rules-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 24px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rules-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
 .card-header {
@@ -690,12 +729,12 @@ onBeforeUnmount(() => {
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(26, 35, 126, 0.1);
 }
 
 .header-left h3 {
   margin: 0 0 16px;
-  color: white;
+  color: #1a237e;
   font-size: 20px;
   font-weight: 500;
 }
@@ -706,63 +745,101 @@ onBeforeUnmount(() => {
 }
 
 .glass-input :deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 35, 126, 0.2);
+  border-radius: 8px;
+  box-shadow: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
 }
 
 .glass-input :deep(.el-input__wrapper:hover) {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: #ffffff;
+  border-color: #3949ab;
+  transform: translateY(-1px);
 }
 
 .glass-input :deep(.el-input__wrapper.is-focus) {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  border-color: #3949ab;
+  box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.15);
+  transform: translateY(-1px);
 }
 
 .glass-input :deep(.el-input__inner) {
-  color: white;
+  color: #1a237e;
 }
 
 .glass-input :deep(.el-input__inner::placeholder) {
-  color: rgba(255, 255, 255, 0.6);
+  color: #5f6368;
 }
 
 .glass-select :deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 35, 126, 0.2);
+  border-radius: 8px;
+  box-shadow: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .glass-select :deep(.el-input__inner) {
-  color: white;
+  color: #1a237e;
 }
 
 .glass-button {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  background: linear-gradient(45deg, #1a237e, #3949ab);
+  border: none;
+  color: #ffffff;
+  border-radius: 8px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.25px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(26, 35, 126, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
   transition: all 0.3s ease;
 }
 
 .glass-button:hover {
-  background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgba(26, 35, 126, 0.3);
+}
+
+.glass-button:hover::before {
+  background: linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
 }
 
 .glass-button:active {
   transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(26, 35, 126, 0.2);
 }
 
 .table-container {
   margin: 24px 0;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .glass-table {
@@ -770,7 +847,7 @@ onBeforeUnmount(() => {
 }
 
 .glass-table :deep(.el-table__header-wrapper) {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(26, 35, 126, 0.03);
 }
 
 .glass-table :deep(.el-table__body-wrapper) {
@@ -779,41 +856,60 @@ onBeforeUnmount(() => {
 
 .glass-table :deep(.el-table__row) {
   background: transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-table :deep(.el-table__cell) {
   background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: #2c3e50;
+  border-bottom: 1px solid rgba(26, 35, 126, 0.1);
+  color: #1a237e;
+  padding: 12px 0;
 }
 
 .glass-table :deep(.el-table__header-wrapper th) {
-  color: #2c3e50;
-  font-weight: 600;
+  color: #3949ab;
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .glass-table :deep(.el-table__row:hover > td) {
-  background: rgba(255, 255, 255, 0.2) !important;
-  color: #2c3e50;
+  background: rgba(26, 35, 126, 0.05) !important;
+  color: #1a237e;
 }
 
 .glass-table :deep(.el-table__row.current-row > td) {
-  background: rgba(255, 255, 255, 0.3) !important;
-  color: #2c3e50;
+  background: rgba(57, 73, 171, 0.1) !important;
+  color: #1a237e;
 }
 
 .rule-name {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #2c3e50;
+  color: #1a237e;
+  transition: all 0.3s ease;
+}
+
+.rule-name:hover {
+  color: #3949ab;
+  transform: translateX(4px);
 }
 
 .glass-tag {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #2c3e50;
+  background: rgba(57, 73, 171, 0.1);
+  border: none;
+  color: #3949ab;
+  border-radius: 6px;
+  font-weight: 500;
+  padding: 4px 12px;
+  transition: all 0.3s ease;
+}
+
+.glass-tag:hover {
+  background: rgba(57, 73, 171, 0.2);
+  transform: translateY(-1px);
 }
 
 .action-buttons {
@@ -826,32 +922,43 @@ onBeforeUnmount(() => {
   justify-content: center;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(26, 35, 126, 0.1);
 }
 
 .glass-pagination :deep(.el-pagination__total),
 .glass-pagination :deep(.el-pagination__jump) {
-  color: white;
+  color: #5f6368;
 }
 
 .glass-pagination :deep(.el-pagination__button) {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 35, 126, 0.2);
+  color: #1a237e;
+  border-radius: 6px;
+  transition: all 0.3s ease;
 }
 
 .glass-pagination :deep(.el-pagination__button:hover) {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(57, 73, 171, 0.1);
+  color: #3949ab;
+  transform: translateY(-1px);
 }
 
 .glass-pagination :deep(.el-pagination__button.is-active) {
-  background: rgba(255, 255, 255, 0.3);
+  background: linear-gradient(45deg, #1a237e, #3949ab);
+  color: #ffffff;
+  border-color: transparent;
+  transform: translateY(-1px);
 }
 
 .filter-dialog :deep(.el-dialog) {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  margin: 0 auto;
 }
 
 .dialog-header {
@@ -861,6 +968,18 @@ onBeforeUnmount(() => {
   padding: 20px 24px;
   background: #fff;
   border-bottom: 1px solid #e4e7ed;
+}
+
+.dialog-header.dark {
+  background: #1a237e;
+}
+
+.dialog-header.dark .dialog-title {
+  color: #ffffff;
+}
+
+.dialog-header.dark .close-button {
+  color: #ffffff;
 }
 
 .dialog-title {
@@ -879,6 +998,21 @@ onBeforeUnmount(() => {
 .close-button:hover {
   color: #1a237e;
   background: rgba(26, 35, 126, 0.04);
+}
+
+.filter-dialog :deep(.el-dialog__header) {
+  padding: 0;
+  margin: 0;
+}
+
+.filter-dialog :deep(.el-dialog__body) {
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
+}
+
+.filter-dialog :deep(.el-dialog__footer) {
+  padding: 0;
 }
 
 .filter-form {
@@ -910,18 +1044,5 @@ onBeforeUnmount(() => {
   padding: 16px 24px;
   background: #f5f7fa;
   border-top: 1px solid #e4e7ed;
-}
-
-.filter-dialog :deep(.el-dialog__header) {
-  padding: 0;
-  margin: 0;
-}
-
-.filter-dialog :deep(.el-dialog__body) {
-  padding: 24px;
-}
-
-.filter-dialog :deep(.el-dialog__footer) {
-  padding: 0;
 }
 </style>

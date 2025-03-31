@@ -157,9 +157,11 @@
                   :close-on-click-modal="false"
                   class="filter-dialog"
                   :show-close="false"
+                  top="5vh"
+                  :append-to-body="true"
                 >
                   <template #header>
-                    <div class="dialog-header">
+                    <div class="dialog-header dark">
                       <span class="dialog-title">筛选设置</span>
                       <el-button
                         class="close-button"
@@ -170,15 +172,17 @@
                       </el-button>
                     </div>
                   </template>
-                  <el-form :model="filterForm" label-width="100px" class="filter-form">
-                    <el-form-item v-for="column in tableColumns" :key="column" :label="column">
-                      <el-input 
-                        v-model="filterForm[column]" 
-                        placeholder="输入筛选条件"
-                        clearable
-                      />
-                    </el-form-item>
-                  </el-form>
+                  <el-scrollbar height="60vh" max-height="60vh">
+                    <el-form :model="filterForm" label-width="100px" class="filter-form">
+                      <el-form-item v-for="column in tableColumns" :key="column" :label="column">
+                        <el-input 
+                          v-model="filterForm[column]" 
+                          placeholder="输入筛选条件"
+                          clearable
+                        />
+                      </el-form-item>
+                    </el-form>
+                  </el-scrollbar>
                   <template #footer>
                     <div class="dialog-footer">
                       <el-button @click="showFilterDialog = false">取消</el-button>
@@ -563,16 +567,58 @@ const handleDbSizeChange = async (size) => {
 }
 
 .dialog-header {
-  background: #1a237e;
-  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 20px 24px;
+  background: #fff;
   border-bottom: 1px solid #e4e7ed;
 }
 
-.dialog-title {
+.dialog-header.dark {
+  background: #1a237e;
+}
+
+.dialog-header.dark .dialog-title {
   color: #ffffff;
+}
+
+.dialog-header.dark .close-button {
+  color: #ffffff;
+}
+
+.dialog-title {
   font-weight: 500;
-  font-size: 16px;
+  font-size: 18px;
+  color: #1a237e;
+}
+
+.close-button {
+  border: none;
+  background: transparent;
+  color: #909399;
+  transition: all 0.3s ease;
+}
+
+.close-button:hover {
+  color: #1a237e;
+  background: rgba(26, 35, 126, 0.04);
+}
+
+.filter-dialog :deep(.el-dialog) {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  margin: 0 auto;
+}
+
+.filter-dialog :deep(.el-dialog__body) {
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
 }
 
 .filter-dialog :deep(.el-dialog__header) {
@@ -587,44 +633,39 @@ const handleDbSizeChange = async (size) => {
   top: 20px;
 }
 
-.el-dialog__body {
+.filter-form {
   padding: 24px;
-  background: #fff;
 }
 
-.el-form-item__label {
+.filter-form :deep(.el-form-item__label) {
   color: #606266;
   font-weight: 500;
 }
 
-.el-input__wrapper,
-.el-select__wrapper {
+.filter-form :deep(.el-input__wrapper) {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 4px;
-  background-color: #fff;
+  transition: all 0.3s ease;
 }
 
-.el-input__wrapper:hover,
-.el-select__wrapper:hover {
+.filter-form :deep(.el-input__wrapper:hover) {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.el-input__wrapper.is-focus,
-.el-select__wrapper.is-focus {
+.filter-form :deep(.el-input__wrapper.is-focus) {
   box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.15);
-}
-
-.el-input__inner {
-  color: #303133;
 }
 
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding-top: 20px;
+  padding: 16px 24px;
+  background: #f5f7fa;
   border-top: 1px solid #e4e7ed;
+}
+
+.dialog-footer .el-button {
+  min-width: 80px;
 }
 
 .empty-list {
@@ -674,73 +715,5 @@ const handleDbSizeChange = async (size) => {
   .el-button {
     width: 100%;
   }
-}
-
-.filter-dialog :deep(.el-dialog) {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-.dialog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
-}
-
-.dialog-title {
-  color: #1a237e;
-  font-weight: 500;
-  font-size: 18px;
-}
-
-.close-button {
-  border: none;
-  background: transparent;
-  color: #909399;
-  transition: all 0.3s ease;
-}
-
-.close-button:hover {
-  color: #1a237e;
-  background: rgba(26, 35, 126, 0.04);
-}
-
-.filter-form {
-  padding: 24px;
-}
-
-.filter-form :deep(.el-form-item__label) {
-  color: #606266;
-  font-weight: 500;
-}
-
-.filter-form :deep(.el-input__wrapper) {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.filter-form :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.filter-form :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.15);
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 24px;
-  background: #f5f7fa;
-  border-top: 1px solid #e4e7ed;
-}
-
-.dialog-footer .el-button {
-  min-width: 80px;
 }
 </style> 

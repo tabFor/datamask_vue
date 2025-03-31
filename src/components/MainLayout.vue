@@ -41,9 +41,13 @@
 
     <!-- 主要内容区域 -->
     <el-main class="layout-main">
-      <router-view v-slot="{ Component }">
+      <router-view v-slot="{ Component, route }">
         <transition name="fade" mode="out-in">
-          <component :is="Component" />
+          <keep-alive>
+            <SkeletonWrapper :skeleton-type="route.meta.skeletonType || 'default'">
+              <component :is="Component" />
+            </SkeletonWrapper>
+          </keep-alive>
         </transition>
       </router-view>
     </el-main>
@@ -56,6 +60,8 @@ import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { SwitchButton } from '@element-plus/icons-vue';
 import { USER_ROLES } from '@/utils/permission';
+import SkeletonWrapper from './SkeletonWrapper.vue';
+import { usersApi } from '@/utils/api';
 
 defineOptions({
   name: 'MainLayout'
@@ -98,12 +104,22 @@ const breadcrumbItems = computed(() => {
 });
 
 // 处理退出登录
-const handleLogout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('username');
-  localStorage.removeItem('userRole');
-  ElMessage.success('已退出登录');
-  router.push('/login');
+const handleLogout = async () => {
+  try {
+    await usersApi.logout();
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('userRole');
+    ElMessage.success('已退出登录');
+    router.push('/login');
+  } catch (error) {
+    console.error('登出失败:', error);
+    // 即使API调用失败，也清除本地存储并重定向到登录页
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('userRole');
+    router.push('/login');
+  }
 };
 
 // 监听路由变化，更新面包屑
@@ -251,6 +267,24 @@ watch(() => route.path, () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* 添加加载动画容器，减少闪烁 */
+:deep(.el-main) {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  will-change: opacity;
+  backface-visibility: hidden;
+}
+
+/* 优化元素过渡 */
+:deep(.el-card), 
+:deep(.el-button),
+:deep(.el-input),
+:deep(.el-select) {
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* 响应式设计 */

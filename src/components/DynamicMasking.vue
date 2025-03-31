@@ -133,9 +133,11 @@
       :close-on-click-modal="false"
       class="filter-dialog"
       :show-close="false"
+      top="5vh"
+      :append-to-body="true"
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header dark">
           <span class="dialog-title">{{ isEditingRule ? '编辑脱敏规则' : '添加脱敏规则' }}</span>
           <el-button
             class="close-button"
@@ -146,30 +148,32 @@
           </el-button>
         </div>
       </template>
-      <el-form :model="currentRule" label-width="120px" class="filter-form">
-        <el-form-item label="表名">
-          <el-select v-model="currentRule.tableName" placeholder="选择表">
-            <el-option v-for="table in tables" :key="table.value" :label="table.label" :value="table.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="列名">
-          <el-select v-model="currentRule.columnName" placeholder="选择列">
-            <el-option v-for="column in columns" :key="column" :label="column" :value="column" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="脱敏类型">
-          <el-select v-model="currentRule.maskingType" placeholder="选择脱敏类型">
-            <el-option label="完全遮盖" value="完全遮盖" />
-            <el-option label="部分遮盖" value="部分遮盖" />
-            <el-option label="替换" value="替换" />
-            <el-option label="哈希" value="哈希" />
-            <el-option label="随机化" value="随机化" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-switch v-model="currentRule.active" />
-        </el-form-item>
-      </el-form>
+      <el-scrollbar height="60vh" max-height="60vh">
+        <el-form :model="currentRule" label-width="120px" class="filter-form">
+          <el-form-item label="表名">
+            <el-select v-model="currentRule.tableName" placeholder="选择表">
+              <el-option v-for="table in tables" :key="table.value" :label="table.label" :value="table.value" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="列名">
+            <el-select v-model="currentRule.columnName" placeholder="选择列">
+              <el-option v-for="column in columns" :key="column" :label="column" :value="column" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="脱敏类型">
+            <el-select v-model="currentRule.maskingType" placeholder="选择脱敏类型">
+              <el-option label="完全遮盖" value="完全遮盖" />
+              <el-option label="部分遮盖" value="部分遮盖" />
+              <el-option label="替换" value="替换" />
+              <el-option label="哈希" value="哈希" />
+              <el-option label="随机化" value="随机化" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-switch v-model="currentRule.active" />
+          </el-form-item>
+        </el-form>
+      </el-scrollbar>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="ruleDialogVisible = false">取消</el-button>
@@ -185,9 +189,11 @@
       :close-on-click-modal="false"
       class="filter-dialog"
       :show-close="false"
+      top="5vh"
+      :append-to-body="true"
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header dark">
           <span class="dialog-title">API连接错误</span>
           <el-button
             class="close-button"
@@ -198,9 +204,11 @@
           </el-button>
         </div>
       </template>
-      <div class="error-content">
-        无法连接到API服务器，请确保后端服务正在运行。
-      </div>
+      <el-scrollbar height="60vh" max-height="60vh">
+        <div class="error-content">
+          无法连接到API服务器，请确保后端服务正在运行。
+        </div>
+      </el-scrollbar>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="showApiErrorDialog = false">关闭</el-button>
@@ -1223,6 +1231,10 @@ const fetchStats = async () => {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  margin: 0 auto;
 }
 
 .dialog-header {
@@ -1232,6 +1244,18 @@ const fetchStats = async () => {
   padding: 20px 24px;
   background: #fff;
   border-bottom: 1px solid #e4e7ed;
+}
+
+.dialog-header.dark {
+  background: #1a237e;
+}
+
+.dialog-header.dark .dialog-title {
+  color: #ffffff;
+}
+
+.dialog-header.dark .close-button {
+  color: #ffffff;
 }
 
 .dialog-title {
@@ -1250,6 +1274,21 @@ const fetchStats = async () => {
 .close-button:hover {
   color: #1a237e;
   background: rgba(26, 35, 126, 0.04);
+}
+
+.filter-dialog :deep(.el-dialog__header) {
+  padding: 0;
+  margin: 0;
+}
+
+.filter-dialog :deep(.el-dialog__body) {
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
+}
+
+.filter-dialog :deep(.el-dialog__footer) {
+  padding: 0;
 }
 
 .filter-form {
@@ -1281,19 +1320,6 @@ const fetchStats = async () => {
   padding: 16px 24px;
   background: #f5f7fa;
   border-top: 1px solid #e4e7ed;
-}
-
-.filter-dialog :deep(.el-dialog__header) {
-  padding: 0;
-  margin: 0;
-}
-
-.filter-dialog :deep(.el-dialog__body) {
-  padding: 24px;
-}
-
-.filter-dialog :deep(.el-dialog__footer) {
-  padding: 0;
 }
 
 .error-content {

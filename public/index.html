@@ -9,6 +9,24 @@
   <title>
     <%= htmlWebpackPlugin.options.title %>
   </title>
+  <style>
+    /* 初始加载样式，防止闪烁 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #f5f7fa;
+    }
+    #app {
+      font-family: Avenir, Helvetica, Arial, sans-serif;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    body.loaded #app {
+      opacity: 1;
+    }
+  </style>
 </head>
 
 <body>
@@ -18,6 +36,12 @@
   </noscript>
   <div id="app"></div>
   <!-- built files will be auto injected -->
+  <script>
+    // 页面加载完成后添加loaded类，触发过渡效果
+    window.addEventListener('load', function() {
+      document.body.classList.add('loaded');
+    });
+  </script>
 </body>
 
 </html>
