@@ -1,12 +1,13 @@
 <template>
   <div class="login-page">
     <div class="login-background">
-      <div class="background-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-        <div class="shape shape-4"></div>
+      <div class="google-shapes">
+        <div class="g-shape g-shape-blue"></div>
+        <div class="g-shape g-shape-red"></div>
+        <div class="g-shape g-shape-yellow"></div>
+        <div class="g-shape g-shape-green"></div>
       </div>
+      <div class="dot-grid"></div>
     </div>
     <div class="login-container">
       <div class="login-header">
@@ -14,8 +15,8 @@
           <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#1976D2;stop-opacity:1" />
+                <stop offset="0%" style="stop-color:#4285F4;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#34A853;stop-opacity:1" />
               </linearGradient>
             </defs>
             <!-- 外圈 -->
@@ -43,7 +44,7 @@
         ref="loginFormRef"
         :model="loginForm"
         :rules="rules"
-        label-width="80px"
+        label-position="top"
         class="login-form"
       >
         <el-form-item
@@ -53,7 +54,7 @@
           <el-input
             v-model="loginForm.username"
             autocomplete="off"
-            class="material-input"
+            class="google-input"
             placeholder="请输入用户名"
           >
             <template #prefix>
@@ -67,22 +68,35 @@
         >
           <el-input 
             v-model="loginForm.password" 
-            type="password" 
+            :type="passwordVisible ? 'text' : 'password'" 
             autocomplete="off"
-            class="material-input"
+            class="google-input"
             placeholder="请输入密码"
             @keyup.enter="handleLogin"
           >
             <template #prefix>
               <el-icon><Lock /></el-icon>
             </template>
+            <template #suffix>
+              <el-icon 
+                class="password-eye" 
+                @click="passwordVisible = !passwordVisible"
+              >
+                <View v-if="passwordVisible" />
+                <Hide v-else />
+              </el-icon>
+            </template>
           </el-input>
         </el-form-item>
+        <div class="form-footer">
+          <el-checkbox v-model="rememberMe" class="remember-me">记住我</el-checkbox>
+          <a href="#" class="forgot-password">忘记密码?</a>
+        </div>
         <el-form-item>
           <el-button
             type="primary"
             @click="handleLogin"
-            class="material-button"
+            class="google-button"
           >
             登录
           </el-button>
@@ -97,9 +111,11 @@ import { reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useRouter } from 'vue-router';
 import { usersApi } from '@/utils/api';
-import { User, Lock } from '@element-plus/icons-vue';
+import { User, Lock, View, Hide } from '@element-plus/icons-vue';
 
 const router = useRouter();
+const passwordVisible = ref(false);
+const rememberMe = ref(false);
 
 const loginForm = reactive({
   username: '',
@@ -137,6 +153,11 @@ const handleLogin = () => {
           // 存储用户角色
           localStorage.setItem('userRole', role);
           
+          // 如果勾选了记住我，可以保存更长时间
+          if (rememberMe.value) {
+            localStorage.setItem('rememberMe', 'true');
+          }
+          
           router.push('/');
         } else {
           ElMessage.error('用户名或密码错误');
@@ -160,7 +181,7 @@ const handleLogin = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
+  background: #fafafa;
   padding: 20px;
   position: relative;
   overflow: hidden;
@@ -175,87 +196,137 @@ const handleLogin = () => {
   z-index: 0;
 }
 
-.background-shapes {
+.google-shapes {
   position: absolute;
   width: 100%;
   height: 100%;
 }
 
-.shape {
+.g-shape {
   position: absolute;
-  border-radius: 50%;
-  filter: blur(40px);
-  opacity: 0.5;
+  border-radius: 8px;
+  opacity: 0.07;
+  transform: rotate(15deg);
 }
 
-.shape-1 {
+.g-shape-blue {
+  width: 600px;
+  height: 600px;
+  background: #4285F4;
+  top: -150px;
+  right: -200px;
+  transform: rotate(25deg);
+  opacity: 0.08;
+  border-radius: 50px;
+}
+
+.g-shape-red {
+  width: 500px;
+  height: 500px;
+  background: #EA4335;
+  bottom: -200px;
+  left: -200px;
+  transform: rotate(-15deg);
+  opacity: 0.08;
+  border-radius: 30px;
+}
+
+.g-shape-yellow {
+  width: 350px;
+  height: 350px;
+  background: #FBBC05;
+  bottom: 15%;
+  right: 10%;
+  transform: rotate(20deg);
+  opacity: 0.07;
+  border-radius: 25px;
+}
+
+.g-shape-green {
   width: 300px;
   height: 300px;
-  background: #4CAF50;
-  top: -100px;
-  left: -100px;
+  background: #34A853;
+  top: 8%;
+  left: 5%;
+  transform: rotate(-10deg);
+  opacity: 0.07;
+  border-radius: 20px;
 }
 
-.shape-2 {
-  width: 250px;
-  height: 250px;
-  background: #2196F3;
-  bottom: -50px;
-  right: -50px;
-}
-
-.shape-3 {
-  width: 200px;
-  height: 200px;
-  background: #FFC107;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.shape-4 {
-  width: 150px;
-  height: 150px;
-  background: #9C27B0;
-  bottom: 20%;
-  left: 20%;
+.dot-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(#e0e0e0 1px, transparent 1px),
+    radial-gradient(#e0e0e0 1px, transparent 1px);
+  background-size: 25px 25px;
+  background-position: 0 0, 12.5px 12.5px;
+  opacity: 0.4;
 }
 
 .login-container {
   width: 100%;
-  max-width: 420px;
-  padding: 40px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  max-width: 360px;
+  padding: 30px 25px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 16px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1), 
+              0 0 0 1px rgba(0, 0, 0, 0.01),
+              0 0 30px rgba(66, 133, 244, 0.08);
   position: relative;
   z-index: 1;
   animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: linear-gradient(to right, #4285F4, #34A853, #FBBC05, #EA4335);
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 28px;
 }
 
 .logo-container {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 20px;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 18px;
   background: #fff;
-  border-radius: 20px;
-  padding: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  padding: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.logo-container::after {
+  content: '';
+  position: absolute;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  border: 2px solid rgba(66, 133, 244, 0.25);
+  z-index: -1;
 }
 
 .logo {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15));
   animation: logoFloat 3s ease-in-out infinite;
 }
 
@@ -264,113 +335,165 @@ const handleLogin = () => {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-6px);
   }
 }
 
 .login-header h2 {
-  font-size: 32px;
-  margin-bottom: 12px;
+  font-size: 26px;
+  margin-bottom: 6px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #202124;
   letter-spacing: -0.5px;
 }
 
 .subtitle {
-  font-size: 16px;
-  color: #666;
-  letter-spacing: 0.5px;
+  font-size: 15px;
+  color: #5f6368;
+  letter-spacing: 0.1px;
 }
 
 .login-form {
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
-.material-input :deep(.el-input__wrapper) {
-  background: #f5f5f5;
-  border: none;
-  border-radius: 12px;
-  padding: 12px 16px;
+.google-input :deep(.el-input__wrapper) {
+  background: #f8f9fa;
+  border: 1px solid #dadce0;
+  border-radius: 10px;
+  padding: 10px 16px;
   box-shadow: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
+  height: 30px;
 }
 
-.material-input :deep(.el-input__wrapper:hover) {
-  background: #eeeeee;
-}
-
-.material-input :deep(.el-input__wrapper.is-focus) {
+.google-input :deep(.el-input__wrapper:hover) {
   background: #fff;
-  box-shadow: 0 0 0 2px #2196F3;
+  border-color: #aecbfa;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.material-input :deep(.el-input__prefix) {
+.google-input :deep(.el-input__wrapper.is-focus) {
+  background: #fff;
+  border-color: #4285F4;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.25);
+}
+
+.google-input :deep(.el-input__prefix) {
   margin-right: 12px;
-  color: #666;
+  color: #5f6368;
 }
 
-.material-button {
+.password-eye {
+  cursor: pointer;
+  color: #5f6368;
+  font-size: 18px;
+  transition: color 0.2s;
+}
+
+.password-eye:hover {
+  color: #4285F4;
+}
+
+.form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+  margin-top: -4px;
+}
+
+.remember-me {
+  color: #5f6368;
+  font-size: 14px;
+}
+
+.forgot-password {
+  color: #4285F4;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.forgot-password:hover {
+  color: #1a73e8;
+  text-decoration: underline;
+}
+
+.google-button {
   width: 100%;
-  height: 48px;
-  background: linear-gradient(45deg, #2196F3, #1976D2);
+  height: 46px;
+  background: linear-gradient(to right, #4285F4, #1a73e8);
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   color: white;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 16px;
   letter-spacing: 0.5px;
-  text-transform: uppercase;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-top: 20px;
+  transition: all 0.3s ease;
+  margin-top: 8px;
   position: relative;
   overflow: hidden;
 }
 
-.material-button::before {
+.google-button::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
-  transform: translateX(-100%);
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+  transform: translateY(-100%);
+  transition: transform 0.6s;
 }
 
-.material-button:hover {
+.google-button:hover {
+  background: linear-gradient(to right, #3367d6, #1a73e8);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
 }
 
-.material-button:hover::before {
-  transform: translateX(100%);
+.google-button:hover::after {
+  transform: translateY(100%);
 }
 
-.material-button:active {
+.google-button:active {
+  background: #1967d2;
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
 }
 
 :deep(.el-form-item__label) {
-  color: #333;
+  color: #202124;
   font-size: 14px;
   font-weight: 500;
+  padding: 0 0 8px;
+  line-height: 1.2;
 }
 
 :deep(.el-input__inner) {
-  color: #333;
+  color: #202124;
   font-size: 15px;
 }
 
 :deep(.el-input__inner::placeholder) {
-  color: #999;
+  color: #80868b;
+}
+
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #4285F4;
+  border-color: #4285F4;
+}
+
+:deep(.el-checkbox__inner:hover) {
+  border-color: #4285F4;
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(25px);
   }
   to {
     opacity: 1;
@@ -381,25 +504,33 @@ const handleLogin = () => {
 /* 响应式设计 */
 @media (max-width: 480px) {
   .login-container {
-    padding: 30px 20px;
-    margin: 20px;
+    padding: 25px 20px;
+    margin: 16px;
+    max-width: 320px;
   }
   
   .login-header h2 {
-    font-size: 28px;
+    font-size: 24px;
   }
   
   .subtitle {
     font-size: 14px;
   }
   
-  .material-button {
+  .google-button {
     height: 44px;
-    font-size: 14px;
+    font-size: 15px;
   }
   
-  .shape {
-    filter: blur(30px);
+  .logo-container {
+    width: 60px;
+    height: 60px;
+    padding: 10px;
+  }
+  
+  .logo-container::after {
+    width: 68px;
+    height: 68px;
   }
 }
 </style>
