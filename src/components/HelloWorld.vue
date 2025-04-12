@@ -37,13 +37,13 @@
         <p class="dashboard-subtitle">安全、高效的敏感数据处理解决方案</p>
       </div>
       
-      <el-row :gutter="24">
-        <!-- 数据脱敏功能卡片，使用网格布局 -->
-        <el-col 
-          :md="12" 
-          :lg="6" 
-          v-if="hasPermission([USER_ROLES.ADMIN, USER_ROLES.DATA_OPERATOR])"
-        >
+      <!-- 数据操作员功能区 -->
+      <el-row :gutter="24" v-if="hasPermission([USER_ROLES.DATA_OPERATOR]) && !isAdmin" class="role-section">
+        <el-col :span="24">
+          <div class="section-title">数据操作员功能</div>
+        </el-col>
+        
+        <el-col :md="12" :lg="8">
           <el-card class="feature-card" shadow="hover">
             <template #header>
               <div class="card-header">
@@ -66,11 +66,7 @@
           </el-card>
         </el-col>
 
-        <el-col 
-          :md="12" 
-          :lg="6" 
-          v-if="hasPermission([USER_ROLES.ADMIN, USER_ROLES.DATA_OPERATOR])"
-        >
+        <el-col :md="12" :lg="8">
           <el-card class="feature-card" shadow="hover">
             <template #header>
               <div class="card-header">
@@ -93,11 +89,112 @@
           </el-card>
         </el-col>
 
-        <el-col 
-          :md="12" 
-          :lg="6" 
-          v-if="hasPermission([USER_ROLES.ADMIN, USER_ROLES.DATA_OPERATOR])"
-        >
+        <el-col :md="12" :lg="8">
+          <el-card class="feature-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <div class="icon-wrapper">
+                  <el-icon><Connection /></el-icon>
+                </div>
+                <span>动态数据脱敏</span>
+              </div>
+            </template>
+            <div class="card-content">
+              <p class="card-description">实时数据库查询，动态脱敏处理</p>
+              <el-button
+                type="warning"
+                class="card-button gradient-warning"
+                @click="navigateTo('/dynamic')"
+              >
+                数据库查询
+              </el-button>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+      
+      <!-- 数据分析师功能区 -->
+      <el-row :gutter="24" v-if="hasPermission([USER_ROLES.DATA_ANALYST]) && !isAdmin" class="role-section">
+        <el-col :span="24">
+          <div class="section-title">数据分析师功能</div>
+        </el-col>
+        
+        <el-col :md="12" :lg="8" :offset="isAnalystOnly ? 8 : 0">
+          <el-card class="feature-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <div class="icon-wrapper">
+                  <el-icon><PieChart /></el-icon>
+                </div>
+                <span>数据分析</span>
+              </div>
+            </template>
+            <div class="card-content">
+              <p class="card-description">深入分析数据，生成可视化报表</p>
+              <el-button
+                type="success"
+                class="card-button gradient-success"
+                @click="navigateTo('/analysis')"
+              >
+                进行数据分析
+              </el-button>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+      
+      <!-- 管理员功能卡片 - 所有功能 -->
+      <el-row :gutter="24" v-if="isAdmin">
+        <el-col :span="24">
+          <div class="section-title">数据处理功能</div>
+        </el-col>
+        <el-col :md="12" :lg="6">
+          <el-card class="feature-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <div class="icon-wrapper">
+                  <el-icon><DataAnalysis /></el-icon>
+                </div>
+                <span>敏感数据识别</span>
+              </div>
+            </template>
+            <div class="card-content">
+              <p class="card-description">创建新的数据识别任务，自动识别敏感信息</p>
+              <el-button
+                type="primary"
+                class="card-button gradient-primary"
+                @click="navigateTo('/tasks')"
+              >
+                创建识别任务
+              </el-button>
+            </div>
+          </el-card>
+        </el-col>
+
+        <el-col :md="12" :lg="6">
+          <el-card class="feature-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <div class="icon-wrapper">
+                  <el-icon><Lock /></el-icon>
+                </div>
+                <span>静态数据脱敏</span>
+              </div>
+            </template>
+            <div class="card-content">
+              <p class="card-description">配置数据脱敏规则，保护敏感数据安全</p>
+              <el-button
+                type="success"
+                class="card-button gradient-success"
+                @click="navigateTo('/rules')"
+              >
+                配置脱敏规则
+              </el-button>
+            </div>
+          </el-card>
+        </el-col>
+
+        <el-col :md="12" :lg="6">
           <el-card class="feature-card" shadow="hover">
             <template #header>
               <div class="card-header">
@@ -120,12 +217,7 @@
           </el-card>
         </el-col>
         
-        <!-- 数据分析师可见的数据分析功能 -->
-        <el-col 
-          :md="12" 
-          :lg="6" 
-          v-if="hasPermission([USER_ROLES.ADMIN, USER_ROLES.DATA_ANALYST])"
-        >
+        <el-col :md="12" :lg="6">
           <el-card class="feature-card" shadow="hover">
             <template #header>
               <div class="card-header">
@@ -150,47 +242,73 @@
       </el-row>
 
       <el-row :gutter="24" class="admin-section" v-if="isAdmin">
-        <el-col :md="12" :lg="12">
+        <el-col :span="24">
+          <div class="section-title">管理员功能</div>
+        </el-col>
+        <el-col :md="12" :lg="8">
           <el-card class="feature-card admin-card" shadow="hover">
             <template #header>
               <div class="card-header">
                 <div class="icon-wrapper">
-                  <el-icon><UserFilled /></el-icon>
+                  <el-icon><Setting /></el-icon>
                 </div>
-                <span>权限管理</span>
+                <span>系统管理</span>
               </div>
             </template>
             <div class="card-content">
-              <p class="card-description">管理系统用户权限，确保数据安全</p>
+              <p class="card-description">管理用户权限及系统配置</p>
               <el-button
-                type="info"
-                class="card-button gradient-info"
+                type="danger"
+                class="card-button gradient-danger"
                 @click="navigateTo('/security')"
               >
-                管理权限
+                系统管理
               </el-button>
             </div>
           </el-card>
         </el-col>
-
-        <el-col :md="12" :lg="12">
+        
+        <el-col :md="12" :lg="8">
           <el-card class="feature-card admin-card" shadow="hover">
             <template #header>
               <div class="card-header">
                 <div class="icon-wrapper">
                   <el-icon><Document /></el-icon>
                 </div>
-                <span>日志审计</span>
+                <span>审计日志</span>
               </div>
             </template>
             <div class="card-content">
-              <p class="card-description">查看系统操作日志，追踪用户行为</p>
+              <p class="card-description">查看系统操作记录，监控异常行为</p>
               <el-button
-                type="danger"
-                class="card-button gradient-danger"
+                type="info"
+                class="card-button gradient-info"
                 @click="navigateTo('/audit')"
               >
-                查看审计日志
+                查看日志
+              </el-button>
+            </div>
+          </el-card>
+        </el-col>
+        
+        <el-col :md="12" :lg="8">
+          <el-card class="feature-card admin-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <div class="icon-wrapper">
+                  <el-icon><Monitor /></el-icon>
+                </div>
+                <span>Presidio测试</span>
+              </div>
+            </template>
+            <div class="card-content">
+              <p class="card-description">测试Presidio敏感信息识别和脱敏功能</p>
+              <el-button
+                type="primary"
+                class="card-button gradient-primary"
+                @click="navigateTo('/presidio-test')"
+              >
+                测试功能
               </el-button>
             </div>
           </el-card>
@@ -210,8 +328,9 @@ import {
   Lock,
   Connection,
   PieChart,
-  UserFilled,
   Document,
+  Setting,
+  Monitor,
 } from '@element-plus/icons-vue';
 
 const isLoggedIn = ref(false);
@@ -221,6 +340,11 @@ const userRole = ref('');
 // 判断是否为管理员
 const isAdmin = computed(() => {
   return userRole.value === USER_ROLES.ADMIN;
+});
+
+// 判断是否仅为数据分析师
+const isAnalystOnly = computed(() => {
+  return userRole.value === USER_ROLES.DATA_ANALYST;
 });
 
 // 在组件挂载时检查登录状态
@@ -540,23 +664,47 @@ const navigateTo = (path) => {
 }
 
 .admin-section {
-  margin-top: 60px;
-  padding-top: 60px;
+  margin-top: 40px;
+  padding-top: 20px;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
   position: relative;
 }
 
 .admin-section:before {
-  content: '管理员功能';
+  content: none; /* 删除之前的伪元素 */
+}
+
+.section-title {
+  text-align: center;
+  margin: 30px 0 20px;
+  position: relative;
+  color: #35495e;
+  font-size: 20px;
+  font-weight: 600;
+  padding-bottom: 10px;
+}
+
+.section-title:after {
+  content: '';
   position: absolute;
-  top: -15px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #f9fafc;
-  padding: 0 20px;
-  color: #909399;
-  font-size: 14px;
-  letter-spacing: 1px;
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #42b883, #35495e);
+  border-radius: 3px;
+}
+
+.role-section {
+  margin-bottom: 40px;
+}
+
+.admin-section {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
 .admin-card {

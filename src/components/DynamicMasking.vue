@@ -150,11 +150,6 @@
       </template>
       <el-scrollbar height="60vh" max-height="60vh">
         <el-form :model="currentRule" label-width="120px" class="filter-form">
-          <el-form-item label="表名">
-            <el-select v-model="currentRule.tableName" placeholder="选择表">
-              <el-option v-for="table in tables" :key="table.value" :label="table.label" :value="table.value" />
-            </el-select>
-          </el-form-item>
           <el-form-item label="列名">
             <el-select v-model="currentRule.columnName" placeholder="选择列">
               <el-option v-for="column in columns" :key="column" :label="column" :value="column" />
@@ -221,11 +216,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { ElMessage, ElLoading } from 'element-plus';
+import { ElMessage, ElLoading, ElMessageBox } from 'element-plus';
 import { Close } from '@element-plus/icons-vue';
-import AuditLogger from '@/utils/auditLogger';
 import request from '@/utils/request';
 import logger from '@/utils/logger';
+import { maskingRulesApi, testDataApi } from '@/utils/api';
 
 // 固定数据库名称
 const DATABASE_NAME = 'datamask';
@@ -563,7 +558,7 @@ const executeQuery = async () => {
 // 获取后端激活的脱敏规则
 const fetchActiveRulesFromBackend = async () => {
   try {
-    const response = await request.get('/api/masking-rules/active');
+    const response = await maskingRulesApi.getActiveRules();
     
     if (response.data) {
       if (response.data.activeRuleIds) {
@@ -587,7 +582,7 @@ const fetchActiveRulesFromBackend = async () => {
 const fetchRulesFromBackend = async () => {
   try {
     // 使用配置好的request实例
-    const response = await request.get('/api/masking-rules');
+    const response = await maskingRulesApi.getAllRules();
     
     if (response.data) {
       logger.debug('获取脱敏规则成功:', response.data);
@@ -634,8 +629,8 @@ const fetchStats = async () => {
     
     logger.debug('开始请求统计数据，当前token:', token.substring(0, 20) + '...');
     
-    // 使用request实例，它已配置了拦截器自动添加token
-    const response = await request.get('/api/test-data/stats');
+    // 使用testDataApi
+    const response = await testDataApi.getStats();
     
     if (response.data && response.data.success) {
       totalRecords.value = response.data.data.totalRecords || 0;
@@ -688,7 +683,7 @@ const addMaskingRule = () => {
   currentRule.value = {
     id: null,
     database: DATABASE_NAME,
-    tableName: selectedTable.value || '',
+    tableName: selectedTable.value,
     columnName: '',
     maskingType: '',
     active: true
@@ -710,39 +705,32 @@ const editRule = (rule) => {
 // 删除规则
 const deleteRule = async (ruleId) => {
   try {
-    loading.value = true;
-    const response = await request.delete(`/api/masking-rules/${ruleId}`);
+    if (!ruleId) {
+      ElMessage.error('规则ID为空，无法删除');
+      return;
+    }
     
-    if (response.data.success) {
+    await ElMessageBox.confirm('确定要删除这条规则吗？此操作不可恢复。', '删除确认', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    });
+    
+    const response = await maskingRulesApi.deleteRule(ruleId);
+    
+    if (response.data && response.data.success) {
       ElMessage.success('规则删除成功');
-      // 记录成功日志
-      await AuditLogger.log(
-        '动态脱敏',
-        `删除脱敏规则 ID: ${ruleId}`,
-        '成功'
-      );
-      // 刷新规则列表
-      await fetchRulesFromBackend();
+      fetchRulesFromBackend(); // 重新加载规则列表
     } else {
-      ElMessage.error(response.data.message || '规则删除失败');
-      // 记录失败日志
-      await AuditLogger.log(
-        '动态脱敏',
-        `删除脱敏规则失败：${response.data.message}`,
-        '失败'
-      );
+      ElMessage.error(response.data?.message || '删除规则失败');
     }
   } catch (error) {
-    ElMessage.error('规则删除失败');
-    // 记录错误日志
-    await AuditLogger.log(
-      '动态脱敏',
-      `删除脱敏规则错误：${error.message}`,
-      '错误'
-    );
-    logger.error('规则删除失败:', error);
-  } finally {
-    loading.value = false;
+    if (error === 'cancel') {
+      // 用户取消了操作
+      return;
+    }
+    const errorMessage = handleApiError(error);
+    ElMessage.error('删除规则出错: ' + errorMessage);
   }
 };
 
@@ -776,76 +764,49 @@ const updateRuleStatus = (rule, status) => {
 };
 
 // 保存规则
-const saveRule = () => {
-  if (!currentRule.value.tableName || !currentRule.value.columnName || !currentRule.value.maskingType) {
-    ElMessage.warning('请填写完整的规则信息');
-    return;
-  }
-  
-  // 确保数据库字段固定为datamask
-  currentRule.value.database = DATABASE_NAME;
-  
-  // 检查是否存在相同表列的规则
-  const existingRules = maskingRules.value.filter(rule => 
-    rule.tableName === currentRule.value.tableName && 
-    rule.columnName === currentRule.value.columnName &&
-    (isEditingRule.value ? rule.id !== currentRule.value.id : true)
-  );
-  
-  // 检查是否存在相同表、相同列、相同脱敏类型的规则（这种情况下完全重复，应该禁止）
-  const duplicateTypeRule = existingRules.find(rule => 
-    rule.maskingType === currentRule.value.maskingType
-  );
-  
-  if (duplicateTypeRule) {
-    ElMessage.error(`错误：表 "${currentRule.value.tableName}" 的列 "${currentRule.value.columnName}" 已存在 "${currentRule.value.maskingType}" 类型的脱敏规则`);
-    return;
-  }
-  
-  // 如果新规则是激活状态，并且已有激活规则，提示冲突
-  if (currentRule.value.active && existingRules.some(r => r.active)) {
-    const activeRules = existingRules.filter(r => r.active);
-    
-    // 询问用户是否自动禁用其他规则
-    if (confirm(`表 "${currentRule.value.tableName}" 列 "${currentRule.value.columnName}" 已有 ${activeRules.length} 个激活规则。是否自动禁用这些规则并启用当前规则？`)) {
-      // 自动禁用冲突的激活规则
-      activeRules.forEach(r => {
-        r.active = false;
-      });
-    } else {
-      // 用户取消，将当前规则设为未激活
-      currentRule.value.active = false;
-      ElMessage.info('已将当前规则设置为未激活状态');
+const saveRule = async () => {
+  try {
+    // 验证表单
+    if (!currentRule.value.columnName) {
+      ElMessage.warning('请选择列名');
+      return;
     }
-  }
-  
-  if (isEditingRule.value) {
-    // 更新现有规则
-    const index = maskingRules.value.findIndex(r => r.id === currentRule.value.id);
-    if (index !== -1) {
-      maskingRules.value[index] = { ...currentRule.value };
-      ElMessage.success('规则已更新');
+    
+    if (!currentRule.value.maskingType) {
+      ElMessage.warning('请选择脱敏类型');
+      return;
+    }
+    
+    // 构建请求数据
+    const requestData = {
+      rules: [
+        {
+          id: currentRule.value.id,
+          database: DATABASE_NAME,
+          tableName: selectedTable.value,
+          columnName: currentRule.value.columnName,
+          maskingType: currentRule.value.maskingType,
+          active: currentRule.value.active
+        }
+      ]
+    };
+    
+    // 发送请求
+    const response = await maskingRulesApi.batchUpdateRules(requestData);
+    
+    if (response.data && response.data.success) {
+      ruleDialogVisible.value = false;
+      ElMessage.success('规则保存成功');
       
-      // 将更新后的规则发送到后端
-      sendRulesToBackend();
+      // 重新获取规则列表
+      fetchRulesFromBackend();
+    } else {
+      ElMessage.error(response.data?.message || '保存规则失败');
     }
-  } else {
-    // 添加新规则
-    const newId = maskingRules.value.length > 0 
-      ? Math.max(...maskingRules.value.map(r => r.id)) + 1 
-      : 1;
-    
-    maskingRules.value.push({
-      ...currentRule.value,
-      id: newId
-    });
-    ElMessage.success('规则已添加');
-    
-    // 将新规则发送到后端
-    sendRulesToBackend();
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    ElMessage.error('保存规则出错: ' + errorMessage);
   }
-  
-  ruleDialogVisible.value = false;
 };
 
 // 将脱敏规则发送到后端
@@ -905,8 +866,6 @@ const toggleActiveRulesDisplay = async () => {
     ElMessage.error('切换规则显示失败: ' + errorMessage);
   }
 };
-
-const loading = ref(false);
 
 // 更新显示的规则
 const updateDisplayedRules = () => {

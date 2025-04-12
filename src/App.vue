@@ -11,7 +11,7 @@
 <script>
 import { defineComponent } from 'vue';
 import { RouterView } from 'vue-router';
-import request from '@/utils/request';
+import { usersApi } from '@/utils/api';
 
 export default defineComponent({
   name: 'App',
@@ -24,12 +24,8 @@ export default defineComponent({
   methods: {
     async checkLoginStatus() {
       try {
-        const response = await request.get('/api/check-auth');
-        
-        if (!response.data.isLoggedIn) {
-          // 未登录，跳转到登录页
-          this.$router.push('/login');
-        } else {
+        const response = await usersApi.checkAuth();
+        if (response.data && response.data.authenticated) {
           // 已登录，存储用户信息
           localStorage.setItem('username', response.data.username);
           
@@ -37,6 +33,9 @@ export default defineComponent({
           if (response.data.role) {
             localStorage.setItem('userRole', response.data.role);
           }
+        } else {
+          // 未登录，跳转到登录页
+          this.$router.push('/login');
         }
       } catch (error) {
         console.error('登录校验失败:', error);

@@ -16,9 +16,21 @@ request.interceptors.request.use(
             config.headers['Authorization'] = 'Bearer ' + token
             // 使用日志工具记录
             logger.api(config.method, config.url, '已添加token认证');
+            console.log(`请求 ${config.url} 已添加token: ${token.substring(0, 10)}...`);
         } else {
             logger.warn(`请求: ${config.url}，未找到token`);
+            console.warn(`警告: 请求 ${config.url} 未找到token，这可能导致403错误`);
         }
+        
+        // 打印完整的请求配置
+        console.log('请求配置:', {
+            url: config.url,
+            method: config.method,
+            headers: config.headers,
+            params: config.params,
+            data: config.data
+        });
+        
         return config
     },
     error => {
@@ -51,6 +63,22 @@ request.interceptors.response.use(
                 method: error.config.method,
                 data: error.config.data
             });
+            
+            // 打印更详细的403错误信息
+            console.error('403权限不足详情:', {
+                url: error.config.url,
+                method: error.config.method,
+                requestData: error.config.data,
+                responseData: error.response.data,
+                headers: error.response.headers,
+                token: localStorage.getItem('token') ? '存在' : '不存在',
+                username: localStorage.getItem('username'),
+                userRole: localStorage.getItem('userRole')
+            });
+            
+            // 可选：显示权限不足提示
+            // import { ElMessage } from 'element-plus'
+            // ElMessage.error('权限不足，无法执行此操作')
         } else {
             logger.error('API请求错误', error);
         }

@@ -85,8 +85,8 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { ElMessage } from 'element-plus';
-import request from '@/utils/request';
 import dayjs from 'dayjs';
+import { auditLogsApi } from '@/utils/api';
 
 // 日志筛选条件
 const dateRange = ref([]);
@@ -231,7 +231,7 @@ const fetchLogs = async () => {
       params.operations = operationTypes.join(',');
     }
 
-    const response = await request.get('/api/audit-logs/search', { params });
+    const response = await auditLogsApi.searchLogs(params);
     logs.value = response.data.content;
     total.value = response.data.totalElements;
   } catch (error) {

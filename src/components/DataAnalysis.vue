@@ -44,6 +44,67 @@
                   </div>
                 </template>
                 
+                <!-- 数据分析概览 -->
+                <div v-if="tableData.length > 0" class="analysis-overview">
+                  <el-row :gutter="20">
+                    <el-col :span="6" v-for="(stat, index) in dataStats" :key="index">
+                      <el-card class="stat-card" shadow="hover">
+                        <div class="stat-title">{{ stat.title }}</div>
+                        <div class="stat-value">{{ stat.value }}</div>
+                        <div class="stat-desc">{{ stat.description }}</div>
+                      </el-card>
+                    </el-col>
+                  </el-row>
+                </div>
+
+                <!-- 数据可视化图表 -->
+                <div v-if="tableData.length > 0" class="charts-container">
+                  <el-row :gutter="20">
+                    <el-col :span="12">
+                      <el-card class="chart-card">
+                        <template #header>
+                          <div class="card-header">
+                            <span>数据分布分析</span>
+                          </div>
+                        </template>
+                        <div ref="distributionChart" class="chart"></div>
+                      </el-card>
+                    </el-col>
+                    <el-col :span="12">
+                      <el-card class="chart-card">
+                        <template #header>
+                          <div class="card-header">
+                            <span>数值趋势分析</span>
+                          </div>
+                        </template>
+                        <div ref="trendChart" class="chart"></div>
+                      </el-card>
+                    </el-col>
+                  </el-row>
+                  <el-row :gutter="20" style="margin-top: 20px;">
+                    <el-col :span="12">
+                      <el-card class="chart-card">
+                        <template #header>
+                          <div class="card-header">
+                            <span>分类占比分析</span>
+                          </div>
+                        </template>
+                        <div ref="pieChart" class="chart"></div>
+                      </el-card>
+                    </el-col>
+                    <el-col :span="12">
+                      <el-card class="chart-card">
+                        <template #header>
+                          <div class="card-header">
+                            <span>相关性分析</span>
+                          </div>
+                        </template>
+                        <div ref="correlationChart" class="chart"></div>
+                      </el-card>
+                    </el-col>
+                  </el-row>
+                </div>
+                
                 <el-table
                   v-if="tableData.length > 0"
                   :data="tableData"
@@ -202,10 +263,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch, onUnmounted, nextTick } from 'vue';
 import { Document, Grid, Close } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import request from '@/utils/request';
+import { maskedDataApi } from '@/utils/api';
+import * as echarts from 'echarts';
 
 // 标签页控制
 const activeTab = ref('files');
@@ -232,6 +294,30 @@ const dbPageSize = ref(20);
 const showFilterDialog = ref(false);
 const filterForm = ref({});
 
+// 数据分析相关
+const dataStats = ref([]);
+const distributionChart = ref(null);
+const trendChart = ref(null);
+const pieChart = ref(null);
+const correlationChart = ref(null);
+
+// 初始化图表实例
+let distributionChartInstance = null;
+let trendChartInstance = null;
+let pieChartInstance = null;
+let correlationChartInstance = null;
+
+// 监听数据变化，更新分析结果
+watch(() => tableData.value, (newData) => {
+  if (newData.length > 0) {
+    analyzeData();
+    // 使用 nextTick 确保 DOM 已经更新
+    nextTick(() => {
+      initCharts();
+    });
+  }
+}, { deep: true });
+
 // 在组件挂载时加载数据
 onMounted(() => {
   loadFileList();
@@ -241,7 +327,7 @@ onMounted(() => {
 // 加载文件列表
 const loadFileList = async () => {
   try {
-    const response = await request.get('/api/masked-data/files');
+    const response = await maskedDataApi.getFiles();
     fileList.value = response.data;
   } catch (error) {
     ElMessage.error('获取脱敏数据文件列表失败');
@@ -253,7 +339,7 @@ const loadFileList = async () => {
 const handleFileSelect = async (filePath) => {
   selectedFile.value = filePath;
   try {
-    const response = await request.get(`/api/masked-data/preview?filePath=${encodeURIComponent(filePath)}&page=${currentPage.value - 1}&size=${pageSize.value}`);
+    const response = await maskedDataApi.previewFile(filePath, currentPage.value - 1, pageSize.value);
     
     tableHeaders.value = response.data.headers;
     tableData.value = response.data.data;
@@ -273,12 +359,7 @@ const downloadFile = async (filePath) => {
       return;
     }
 
-    const response = await request.get(`/api/masked-data/download`, {
-      params: {
-        filePath: filePath
-      },
-      responseType: 'blob'
-    });
+    const response = await maskedDataApi.downloadFile(filePath);
 
     // 获取文件名
     const contentDisposition = response.headers['content-disposition'];
@@ -324,7 +405,7 @@ const handleSizeChange = (size) => {
 // 加载数据表列表
 const loadTableList = async () => {
   try {
-    const response = await request.get('/api/masked-data/db-tables');
+    const response = await maskedDataApi.getTables();
     tableList.value = response.data;
   } catch (error) {
     ElMessage.error('获取脱敏数据表列表失败');
@@ -338,7 +419,7 @@ const handleTableSelect = async (tableName) => {
   
   try {
     // 先查询表结构信息
-    const response = await request.get(`/api/masked-data/db-query?tableName=${encodeURIComponent(tableName)}&page=0&size=${dbPageSize.value}`);
+    const response = await maskedDataApi.queryTable(tableName, 0, dbPageSize.value);
     
     // 从表结构信息中提取列名
     tableColumns.value = response.data.columns.map(col => col.Field);
@@ -368,7 +449,7 @@ const applyFilter = async () => {
   });
   
   try {
-    const response = await request.get(`/api/masked-data/db-query?tableName=${encodeURIComponent(selectedTable.value)}&page=0&size=${dbPageSize.value}&conditions=${encodeURIComponent(JSON.stringify(conditions))}`);
+    const response = await maskedDataApi.queryTable(selectedTable.value, 0, dbPageSize.value, conditions);
     
     dbTableData.value = response.data.data;
     dbTotalItems.value = response.data.total;
@@ -386,7 +467,7 @@ const applyFilter = async () => {
 const handleDbPageChange = async (page) => {
   dbCurrentPage.value = page;
   try {
-    const response = await request.get(`/api/masked-data/db-query?tableName=${encodeURIComponent(selectedTable.value)}&page=${page - 1}&size=${dbPageSize.value}`);
+    const response = await maskedDataApi.queryTable(selectedTable.value, page - 1, dbPageSize.value);
     dbTableData.value = response.data.data;
     dbTotalItems.value = response.data.total;
   } catch (error) {
@@ -400,7 +481,7 @@ const handleDbSizeChange = async (size) => {
   dbPageSize.value = size;
   dbCurrentPage.value = 1;
   try {
-    const response = await request.get(`/api/masked-data/db-query?tableName=${encodeURIComponent(selectedTable.value)}&page=0&size=${size}`);
+    const response = await maskedDataApi.queryTable(selectedTable.value, 0, size);
     dbTableData.value = response.data.data;
     dbTotalItems.value = response.data.total;
   } catch (error) {
@@ -408,6 +489,309 @@ const handleDbSizeChange = async (size) => {
     console.error(error);
   }
 };
+
+// 数据分析函数
+const analyzeData = () => {
+  if (tableData.value.length === 0) return;
+
+  // 计算基本统计信息
+  const stats = [];
+  const numericColumns = [];
+  const categoricalColumns = [];
+
+  // 分析每列数据
+  tableHeaders.value.forEach(header => {
+    const values = tableData.value.map(row => row[header]);
+    const isNumeric = values.every(v => !isNaN(parseFloat(v)) && isFinite(v));
+    
+    if (isNumeric) {
+      numericColumns.push(header);
+      const numericValues = values.map(v => parseFloat(v));
+      const sum = numericValues.reduce((a, b) => a + b, 0);
+      const avg = sum / numericValues.length;
+      const max = Math.max(...numericValues);
+      const min = Math.min(...numericValues);
+      
+      stats.push({
+        title: `${header}统计`,
+        value: avg.toFixed(2),
+        description: `范围: ${min.toFixed(2)} - ${max.toFixed(2)}`
+      });
+    } else {
+      categoricalColumns.push(header);
+      const uniqueValues = new Set(values);
+      stats.push({
+        title: `${header}统计`,
+        value: uniqueValues.size,
+        description: `唯一值数量`
+      });
+    }
+  });
+
+  dataStats.value = stats;
+};
+
+// 初始化图表
+const initCharts = () => {
+  if (!tableData.value.length) return;
+
+  // 确保 DOM 元素存在
+  if (!distributionChart.value || !trendChart.value || !pieChart.value || !correlationChart.value) {
+    console.warn('图表容器未准备好');
+    return;
+  }
+
+  // 销毁旧实例
+  if (distributionChartInstance) distributionChartInstance.dispose();
+  if (trendChartInstance) trendChartInstance.dispose();
+  if (pieChartInstance) pieChartInstance.dispose();
+  if (correlationChartInstance) correlationChartInstance.dispose();
+
+  try {
+    // 创建新实例
+    distributionChartInstance = echarts.init(distributionChart.value);
+    trendChartInstance = echarts.init(trendChart.value);
+    pieChartInstance = echarts.init(pieChart.value);
+    correlationChartInstance = echarts.init(correlationChart.value);
+
+    // 设置图表配置
+    updateDistributionChart();
+    updateTrendChart();
+    updatePieChart();
+    updateCorrelationChart();
+  } catch (error) {
+    console.error('初始化图表失败:', error);
+  }
+};
+
+// 更新分布图
+const updateDistributionChart = () => {
+  if (!distributionChartInstance) return;
+
+  const option = {
+    title: {
+      text: '数据分布',
+      left: 'center'
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      }
+    },
+    xAxis: {
+      type: 'category',
+      data: tableHeaders.value
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [{
+      data: tableHeaders.value.map(header => {
+        const values = tableData.value.map(row => row[header]);
+        return values.length;
+      }),
+      type: 'bar'
+    }]
+  };
+
+  distributionChartInstance.setOption(option);
+};
+
+// 更新趋势图
+const updateTrendChart = () => {
+  if (!trendChartInstance) return;
+
+  const numericColumns = tableHeaders.value.filter(header => {
+    const values = tableData.value.map(row => row[header]);
+    return values.every(v => !isNaN(parseFloat(v)) && isFinite(v));
+  });
+
+  if (numericColumns.length === 0) return;
+
+  const option = {
+    title: {
+      text: '数值趋势',
+      left: 'center'
+    },
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      data: numericColumns,
+      bottom: 0
+    },
+    xAxis: {
+      type: 'category',
+      data: Array.from({ length: tableData.value.length }, (_, i) => i + 1)
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: numericColumns.map(column => ({
+      name: column,
+      type: 'line',
+      data: tableData.value.map(row => parseFloat(row[column]))
+    }))
+  };
+
+  trendChartInstance.setOption(option);
+};
+
+// 更新饼图
+const updatePieChart = () => {
+  if (!pieChartInstance) return;
+
+  const categoricalColumns = tableHeaders.value.filter(header => {
+    const values = tableData.value.map(row => row[header]);
+    return !values.every(v => !isNaN(parseFloat(v)) && isFinite(v));
+  });
+
+  if (categoricalColumns.length === 0) return;
+
+  const selectedColumn = categoricalColumns[0];
+  const valueCounts = {};
+  tableData.value.forEach(row => {
+    const value = row[selectedColumn];
+    valueCounts[value] = (valueCounts[value] || 0) + 1;
+  });
+
+  const option = {
+    title: {
+      text: `${selectedColumn}分布`,
+      left: 'center'
+    },
+    tooltip: {
+      trigger: 'item'
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left'
+    },
+    series: [{
+      type: 'pie',
+      radius: '50%',
+      data: Object.entries(valueCounts).map(([name, value]) => ({
+        name,
+        value
+      })),
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
+        }
+      }
+    }]
+  };
+
+  pieChartInstance.setOption(option);
+};
+
+// 更新相关性图
+const updateCorrelationChart = () => {
+  if (!correlationChartInstance) return;
+
+  const numericColumns = tableHeaders.value.filter(header => {
+    const values = tableData.value.map(row => row[header]);
+    return values.every(v => !isNaN(parseFloat(v)) && isFinite(v));
+  });
+
+  if (numericColumns.length < 2) return;
+
+  const correlationData = [];
+  for (let i = 0; i < numericColumns.length; i++) {
+    for (let j = i + 1; j < numericColumns.length; j++) {
+      const col1 = numericColumns[i];
+      const col2 = numericColumns[j];
+      const values1 = tableData.value.map(row => parseFloat(row[col1]));
+      const values2 = tableData.value.map(row => parseFloat(row[col2]));
+      
+      // 计算相关系数
+      const correlation = calculateCorrelation(values1, values2);
+      correlationData.push([i, j, correlation]);
+    }
+  }
+
+  const option = {
+    title: {
+      text: '相关性分析',
+      left: 'center'
+    },
+    tooltip: {
+      position: 'top'
+    },
+    grid: {
+      height: '50%',
+      top: '10%'
+    },
+    xAxis: {
+      type: 'category',
+      data: numericColumns,
+      splitArea: {
+        show: true
+      }
+    },
+    yAxis: {
+      type: 'category',
+      data: numericColumns,
+      splitArea: {
+        show: true
+      }
+    },
+    visualMap: {
+      min: -1,
+      max: 1,
+      calculable: true,
+      orient: 'horizontal',
+      left: 'center',
+      bottom: '15%'
+    },
+    series: [{
+      type: 'heatmap',
+      data: correlationData,
+      label: {
+        show: true
+      },
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
+        }
+      }
+    }]
+  };
+
+  correlationChartInstance.setOption(option);
+};
+
+// 计算相关系数
+const calculateCorrelation = (x, y) => {
+  const n = x.length;
+  let sumX = 0, sumY = 0, sumXY = 0;
+  let sumX2 = 0, sumY2 = 0;
+
+  for (let i = 0; i < n; i++) {
+    sumX += x[i];
+    sumY += y[i];
+    sumXY += x[i] * y[i];
+    sumX2 += x[i] * x[i];
+    sumY2 += y[i] * y[i];
+  }
+
+  const numerator = n * sumXY - sumX * sumY;
+  const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+
+  return denominator === 0 ? 0 : numerator / denominator;
+};
+
+// 在组件卸载时销毁图表实例
+onUnmounted(() => {
+  if (distributionChartInstance) distributionChartInstance.dispose();
+  if (trendChartInstance) trendChartInstance.dispose();
+  if (pieChartInstance) pieChartInstance.dispose();
+  if (correlationChartInstance) correlationChartInstance.dispose();
+});
 </script>
 
 <style scoped>
@@ -715,5 +1099,55 @@ const handleDbSizeChange = async (size) => {
   .el-button {
     width: 100%;
   }
+}
+
+.analysis-overview {
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-title {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1a237e;
+  margin-bottom: 8px;
+}
+
+.stat-desc {
+  font-size: 12px;
+  color: #999;
+}
+
+.charts-container {
+  margin-bottom: 24px;
+}
+
+.chart-card {
+  margin-bottom: 20px;
+}
+
+.chart {
+  height: 300px;
+  width: 100%;
 }
 </style> 

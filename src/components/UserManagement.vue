@@ -1,10 +1,11 @@
 import AuditLogger from '@/utils/auditLogger';
+import { usersApi } from '@/utils/api';
 
 // 在更新用户权限方法中添加日志记录
 const updateUserPermissions = async (userId, permissions) => {
   try {
     loading.value = true;
-    const response = await axios.put(`/api/users/${userId}/permissions`, {
+    const response = await usersApi.updateUserPermissions(userId, {
       permissions
     });
     
@@ -44,7 +45,7 @@ const updateUserPermissions = async (userId, permissions) => {
 const deleteUser = async (userId) => {
   try {
     loading.value = true;
-    const response = await axios.delete(`/api/users/${userId}`);
+    const response = await usersApi.deleteUser(userId);
     
     if (response.data.success) {
       ElMessage.success('用户删除成功');

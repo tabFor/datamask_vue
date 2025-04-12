@@ -18,8 +18,14 @@ export const databaseApi = {
   },
 
   // 检测表的敏感列
-  detectTableSensitiveColumns(tableName) {
-    return request.get(`/api/sensitive-data/detect/${tableName}`)
+  detectTableSensitiveColumns(tableName, connectionParams) {
+    if (connectionParams) {
+      // 如果提供了连接参数，作为查询参数添加
+      return request.get(`/api/sensitive-data/detect/${tableName}`, { 
+        params: connectionParams 
+      });
+    }
+    return request.get(`/api/sensitive-data/detect/${tableName}`);
   },
 
   // 检测所有敏感列
@@ -30,6 +36,13 @@ export const databaseApi = {
   // 检测单个列的敏感信息
   detectColumn(data) {
     return request.post('/api/sensitive-data/detect/column', data)
+  },
+  
+  // 预览敏感列识别结果
+  previewSensitiveColumns(tableName, connectionParams) {
+    const data = { tableName, ...connectionParams };
+    console.log('发送到presidio API的数据:', data);
+    return request.post('/api/presidio/detect-sensitive-columns', data);
   }
 }
 
@@ -75,7 +88,26 @@ export const tasksApi = {
   
   // 创建任务
   createTask(data) {
+    console.log('创建任务请求数据:', data);
+    console.log('当前用户信息:', {
+      username: localStorage.getItem('username'),
+      role: localStorage.getItem('userRole'),
+      tokenExists: !!localStorage.getItem('token')
+    });
     return request.post('/api/tasks', data)
+      .then(response => {
+        console.log('创建任务成功响应:', response.data);
+        return response;
+      })
+      .catch(error => {
+        console.error('创建任务错误详情:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+        throw error;
+      });
   },
   
   // 更新任务
@@ -174,6 +206,11 @@ export const usersApi = {
   // 删除用户
   deleteUser(userId) {
     return request.delete(`/api/users/${userId}`)
+  },
+  
+  // 更新用户权限
+  updateUserPermissions(userId, data) {
+    return request.put(`/api/users/${userId}/permissions`, data)
   }
 }
 
@@ -202,5 +239,151 @@ export const rolesApi = {
   // 查询用户角色
   getUserRoles(userId) {
     return request.get(`/api/users/${userId}/roles`)
+  }
+}
+
+// 日志审计相关API
+export const auditLogsApi = {
+  // 搜索/获取日志
+  searchLogs(params) {
+    return request.get('/api/audit-logs/search', { params })
+  },
+  
+  // 获取日志详情
+  getLog(logId) {
+    return request.get(`/api/audit-logs/${logId}`)
+  },
+  
+  // 获取日志操作类型统计
+  getOperationStats() {
+    return request.get('/api/audit-logs/stats/operations')
+  },
+  
+  // 获取日志时间统计
+  getTimeStats() {
+    return request.get('/api/audit-logs/stats/time')
+  }
+}
+
+// 遮蔽规则相关API
+export const maskingRulesApi = {
+  // 获取所有遮蔽规则
+  getAllRules() {
+    return request.get('/api/masking-rules')
+  },
+  
+  // 获取激活的遮蔽规则
+  getActiveRules() {
+    return request.get('/api/masking-rules/active')
+  },
+  
+  // 创建遮蔽规则
+  createRule(data) {
+    return request.post('/api/masking-rules', data)
+  },
+  
+  // 批量创建/更新遮蔽规则
+  batchUpdateRules(data) {
+    return request.post('/api/masking-rules/batch-wrapped', data)
+  },
+  
+  // 更新遮蔽规则
+  updateRule(ruleId, data) {
+    return request.put(`/api/masking-rules/${ruleId}`, data)
+  },
+  
+  // 删除遮蔽规则
+  deleteRule(ruleId) {
+    return request.delete(`/api/masking-rules/${ruleId}`)
+  },
+  
+  // 激活/停用遮蔽规则
+  toggleRuleStatus(ruleId, status) {
+    return request.put(`/api/masking-rules/${ruleId}/status`, { active: status })
+  }
+}
+
+// 遮蔽数据访问相关API
+export const maskedDataApi = {
+  // 获取遮蔽数据文件列表
+  getFiles() {
+    return request.get('/api/masked-data/files')
+  },
+  
+  // 预览遮蔽数据文件
+  previewFile(filePath, page, size) {
+    return request.get('/api/masked-data/preview', { 
+      params: { 
+        filePath, 
+        page, 
+        size 
+      } 
+    })
+  },
+  
+  // 下载遮蔽数据文件
+  downloadFile(filePath) {
+    return request.get('/api/masked-data/download', { 
+      params: { filePath },
+      responseType: 'blob'
+    })
+  },
+  
+  // 获取遮蔽数据表列表
+  getTables() {
+    return request.get('/api/masked-data/db-tables')
+  },
+  
+  // 查询遮蔽数据表
+  queryTable(tableName, page, size, conditions) {
+    const params = { tableName, page, size }
+    
+    if (conditions) {
+      params.conditions = JSON.stringify(conditions)
+    }
+    
+    return request.get('/api/masked-data/db-query', { params })
+  }
+}
+
+// 测试数据相关API
+export const testDataApi = {
+  // 获取测试数据统计
+  getStats() {
+    return request.get('/api/test-data/stats')
+  },
+  
+  // 获取客户信息列表
+  getCustomers(params) {
+    return request.get('/api/test-data/customers', { params })
+  },
+  
+  // 按照表名获取通用测试数据列表
+  getTestData(tableName, params) {
+    return request.get(`/api/test-data/${tableName}`, { params })
+  }
+}
+
+// Presidio相关API
+export const presidioApi = {
+  // 检查Presidio服务状态
+  checkStatus() {
+    return request.get('/api/presidio/status')
+  },
+  
+  // 分析文本
+  analyzeText(text) {
+    return request.post('/api/presidio/analyze', { text })
+  },
+  
+  // 脱敏文本
+  anonymizeText(text) {
+    return request.post('/api/presidio/anonymize', { text })
+  },
+  
+  // 检测敏感列
+  detectSensitiveColumns(tableName, connectionParams) {
+    const data = { tableName, ...connectionParams };
+    return request.post('/api/presidio/detect-sensitive-columns', data)
   }
 } 

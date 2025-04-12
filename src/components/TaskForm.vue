@@ -178,105 +178,178 @@
         </div>
       </el-form-item>
 
-      <!-- 脱敏规则选择 -->
-      <h3>脱敏规则选择</h3>
-      <el-form-item
-        label="脱敏规则"
-        prop="rules"
-      >
-        <el-select 
-          v-model="formData.rules" 
-          multiple 
-          placeholder="请选择脱敏规则"
-          :loading="rulesLoading"
-          @focus="fetchRules"
-          :disabled="isTaskCompleted"
-        >
-          <el-option
-            v-for="rule in availableRules"
-            :key="rule.ruleId"
-            :label="rule.name"
-            :value="rule.ruleId"
-          >
-            <div>
-              <span>{{ rule.name }}</span>
-              <div class="rule-description">
-                {{ rule.description }}
-              </div>
-            </div>
-          </el-option>
-        </el-select>
-        <div class="form-item-help">
-          <small>可以选择多个脱敏规则，系统将使用StaticDataMaskingService进行处理</small>
-        </div>
+      <!-- 脱敏方式选择 -->
+      <h3>脱敏方式</h3>
+      <el-form-item label="脱敏方式选择">
+        <el-radio-group v-model="formData.maskingMethod" :disabled="isTaskCompleted">
+          <el-radio label="custom">手动配置规则</el-radio>
+          <el-radio label="presidio">Presidio自动识别</el-radio>
+        </el-radio-group>
       </el-form-item>
 
-      <!-- 字段映射 -->
-      <div v-if="formData.rules.length > 0 && tableColumns.length > 0" class="field-mapping-section">
-        <h3>字段映射</h3>
-        <div class="field-mapping-header">
-          <span>请为每个列选择对应的脱敏规则</span>
+      <!-- 根据脱敏方式切换不同的界面 -->
+      <div v-if="formData.maskingMethod === 'custom'">
+        <!-- 手动配置规则部分 -->
+        <el-form-item
+          label="脱敏规则"
+          prop="rules"
+        >
+          <el-select 
+            v-model="formData.rules" 
+            multiple 
+            placeholder="请选择脱敏规则"
+            :loading="rulesLoading"
+            @focus="fetchRules"
+            :disabled="isTaskCompleted"
+          >
+            <el-option
+              v-for="rule in availableRules"
+              :key="rule.ruleId"
+              :label="rule.name"
+              :value="rule.ruleId"
+            >
+              <div>
+                <span>{{ rule.name }}</span>
+                <div class="rule-description">
+                  {{ rule.description }}
+                </div>
+              </div>
+            </el-option>
+          </el-select>
+          <div class="form-item-help">
+            <small>可以选择多个脱敏规则，系统将使用StaticDataMaskingService进行处理</small>
+          </div>
+        </el-form-item>
+
+        <!-- 字段映射 -->
+        <div v-if="formData.rules.length > 0 && tableColumns.length > 0" class="field-mapping-section">
+          <h3>字段映射</h3>
+          <div class="field-mapping-header">
+            <span>请为每个列选择对应的脱敏规则</span>
+            <el-button 
+              type="primary" 
+              size="small" 
+              @click="autoRecommendRuleMappings"
+              :disabled="sensitiveColumns.length === 0 || isTaskCompleted"
+            >
+              自动推荐映射
+            </el-button>
+          </div>
+          <div class="field-mapping-info">
+            <el-alert
+              title="重要提示：正确的字段映射是脱敏任务成功执行的关键"
+              type="warning"
+              description="请确保为需要脱敏的列选择合适的规则，否则可能导致任务执行时处理0条记录。"
+              :closable="false"
+              show-icon
+            />
+          </div>
+          <div class="field-mapping-container">
+            <el-form-item 
+              v-for="column in tableColumns" 
+              :key="column"
+              :label="column"
+              class="field-mapping-item"
+            >
+              <div class="column-mapping">
+                <div class="column-info">
+                  <el-select 
+                    v-model="formData.columnMappings[column]" 
+                    placeholder="请选择脱敏规则"
+                    clearable
+                    class="rule-select"
+                    :disabled="isTaskCompleted"
+                  >
+                    <el-option
+                      label="不脱敏"
+                      value=""
+                    />
+                    <el-option
+                      v-for="ruleId in formData.rules"
+                      :key="ruleId"
+                      :label="getRuleName(ruleId)"
+                      :value="ruleId"
+                    />
+                  </el-select>
+                  <div class="column-tags">
+                    <el-tag 
+                      v-if="sensitiveColumns.some(sc => sc.columnName === column)"
+                      type="warning"
+                      size="small"
+                      class="sensitive-tag"
+                    >
+                      敏感数据
+                    </el-tag>
+                    <el-tag size="small" type="info" class="type-tag">
+                      {{ columnTypes[column] || '未知类型' }}
+                    </el-tag>
+                  </div>
+                </div>
+              </div>
+            </el-form-item>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="formData.maskingMethod === 'presidio'">
+        <!-- Presidio自动识别部分 -->
+        <el-form-item
+          label="自动识别选项"
+          prop="autoDetectColumns"
+        >
+          <el-checkbox v-model="formData.autoDetectColumns" :disabled="isTaskCompleted">自动识别敏感列</el-checkbox>
+          <div class="form-item-help">
+            <small>开启后，系统将使用Presidio引擎自动识别并脱敏敏感数据，无需手动指定规则</small>
+          </div>
+        </el-form-item>
+        
+        <el-form-item>
           <el-button 
             type="primary" 
             size="small" 
-            @click="autoRecommendRuleMappings"
-            :disabled="sensitiveColumns.length === 0 || isTaskCompleted"
+            v-if="formData.tableName" 
+            @click="previewSensitiveColumns" 
+            :loading="previewLoading"
+            :disabled="isTaskCompleted"
           >
-            自动推荐映射
+            预览敏感列识别结果
           </el-button>
-        </div>
-        <div class="field-mapping-info">
+        </el-form-item>
+
+        <!-- 显示Presidio提示 -->
+        <div v-if="tableColumns.length > 0" class="presidio-info-section">
+          <h3>Presidio自动识别</h3>
           <el-alert
-            title="重要提示：正确的字段映射是脱敏任务成功执行的关键"
-            type="warning"
-            description="请确保为需要脱敏的列选择合适的规则，否则可能导致任务执行时处理0条记录。"
+            title="Presidio将自动处理以下敏感数据类型"
+            type="info"
+            description="个人姓名、电话号码、电子邮箱、身份证号、地址、银行卡号等"
             :closable="false"
             show-icon
           />
-        </div>
-        <div class="field-mapping-container">
-          <el-form-item 
-            v-for="column in tableColumns" 
-            :key="column"
-            :label="column"
-            class="field-mapping-item"
-          >
-            <div class="column-mapping">
-              <div class="column-info">
-                <el-select 
-                  v-model="formData.columnMappings[column]" 
-                  placeholder="请选择脱敏规则"
-                  clearable
-                  class="rule-select"
-                  :disabled="isTaskCompleted"
-                >
-                  <el-option
-                    label="不脱敏"
-                    value=""
-                  />
-                  <el-option
-                    v-for="ruleId in formData.rules"
-                    :key="ruleId"
-                    :label="getRuleName(ruleId)"
-                    :value="ruleId"
-                  />
-                </el-select>
-                <div class="column-tags">
-                  <el-tag 
-                    v-if="sensitiveColumns.some(sc => sc.columnName === column)"
-                    type="warning"
-                    size="small"
-                    class="sensitive-tag"
-                  >
-                    敏感数据
-                  </el-tag>
-                  <el-tag size="small" type="info" class="type-tag">
-                    {{ columnTypes[column] || '未知类型' }}
-                  </el-tag>
-                </div>
-              </div>
-            </div>
-          </el-form-item>
+          
+          <!-- 显示预览的敏感列 -->
+          <div v-if="detectedColumns.length > 0" class="detected-columns-section">
+            <h4>识别出 {{ detectedColumns.length }} 个敏感列：</h4>
+            <el-table :data="detectedColumns" border stripe class="detected-columns-table">
+              <el-table-column prop="columnName" label="列名" width="180"></el-table-column>
+              <el-table-column prop="sensitiveType" label="敏感类型" width="180"></el-table-column>
+              <el-table-column prop="dataType" label="数据类型" width="120"></el-table-column>
+              <el-table-column prop="maskingRule" label="脱敏规则"></el-table-column>
+              <el-table-column prop="description" label="说明"></el-table-column>
+            </el-table>
+          </div>
+          
+          <div class="sensitive-columns-preview" v-else-if="sensitiveColumns.length > 0">
+            <p>系统已识别出以下可能的敏感列：</p>
+            <el-tag 
+              v-for="column in sensitiveColumns" 
+              :key="column.columnName || column"
+              class="sensitive-column-tag"
+              type="warning"
+            >
+              {{ column.columnName || column }}
+            </el-tag>
+          </div>
         </div>
       </div>
 
@@ -390,6 +463,8 @@ const tableColumns = ref([]);
 const sensitiveColumns = ref([]);
 const columnTypes = ref({});
 const rulesMappingTemplate = ref(null);
+const detectedColumns = ref([]);
+const previewLoading = ref(false);
 
 // 表单数据
 const formData = reactive({
@@ -412,7 +487,10 @@ const formData = reactive({
   
   outputFormat: props.initialData.outputFormat || 'original',
   outputTable: props.initialData.outputTable || '',
-  backupData: props.initialData.backupData !== undefined ? props.initialData.backupData : true
+  backupData: props.initialData.backupData !== undefined ? props.initialData.backupData : true,
+  usePresidio: props.initialData.usePresidio || false,
+  autoDetectColumns: props.initialData.autoDetectColumns || false,
+  maskingMethod: props.initialData.maskingMethod || 'custom'
 });
 
 // 计算属性：判断任务是否已完成
@@ -430,7 +508,23 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   dbName: [{ required: true, message: '请输入数据库名', trigger: 'blur' }],
   tableName: [{ required: true, message: '请选择表', trigger: 'change' }],
-  rules: [{ required: true, message: '请选择至少一个脱敏规则', trigger: 'change' }],
+  rules: [{ 
+    required: true, 
+    message: '请选择至少一个脱敏规则', 
+    trigger: 'change',
+    validator: (rule, value, callback) => {
+      if (!value || value.length === 0) {
+        // 如果选择了Presidio方式，则不需要选择规则
+        if (formData.maskingMethod === 'presidio') {
+          callback();
+        } else {
+          callback(new Error('请选择至少一个脱敏规则'));
+        }
+      } else {
+        callback();
+      }
+    }
+  }],
   outputFormat: [{ required: true, message: '请选择输出格式', trigger: 'change' }],
   outputTable: [{ 
     required: true, 
@@ -728,7 +822,20 @@ const fetchTableColumns = async () => {
           dbName: formData.dbName
         });
         
-        const sensitiveResponse = await databaseApi.detectTableSensitiveColumns(formData.tableName);
+        // 准备数据库连接参数
+        const connectionParams = {
+          dbType: formData.dbType,
+          host: formData.host,
+          port: formData.port,
+          username: formData.username,
+          password: formData.password,
+          dbName: formData.dbName
+        };
+        
+        const sensitiveResponse = await databaseApi.detectTableSensitiveColumns(
+          formData.tableName, 
+          connectionParams
+        );
         logger.debug('敏感数据检测API响应状态:', sensitiveResponse.status);
         logger.debug('敏感数据检测API响应头:', sensitiveResponse.headers);
         logger.debug('敏感数据检测响应完整数据:', sensitiveResponse);
@@ -801,6 +908,12 @@ const submitForm = () => {
       return;
     }
     
+    // 打印完整的表单数据用于调试
+    console.log('表单数据:', {
+      ...formData,
+      password: '******' // 隐藏密码
+    });
+    
     submitting.value = true;
     try {
       // 格式化提交数据，转换为API所需格式
@@ -815,26 +928,38 @@ const submitForm = () => {
         password: formData.password,
         dbName: formData.dbName,
         tableName: formData.tableName,
-        // 将columnMappings转换为maskingRules数组格式
-        maskingRules: Object.entries(formData.columnMappings)
-          .filter(([, ruleId]) => ruleId) // 过滤掉没有选择规则的列
-          .map(([columnName, ruleId]) => ({
-            columnName,
-            ruleId
-          })),
-        // 同时提供原始的columnMappings映射关系
-        columnMappings: Object.entries(formData.columnMappings)
-          .filter(([, ruleId]) => ruleId)
-          .reduce((map, [columnName, ruleId]) => {
-            map[columnName] = ruleId;
-            return map;
-          }, {}),
+        // 将maskingMethod转换为usePresidio字段
+        usePresidio: formData.maskingMethod === 'presidio',
+        // 根据所选方式添加不同的参数
+        ...(formData.maskingMethod === 'custom' ? {
+          // 将columnMappings转换为maskingRules数组格式
+          maskingRules: Object.entries(formData.columnMappings)
+            .filter(([, ruleId]) => ruleId) // 过滤掉没有选择规则的列
+            .map(([columnName, ruleId]) => ({
+              columnName,
+              ruleId
+            })),
+          // 同时提供原始的columnMappings映射关系
+          columnMappings: Object.entries(formData.columnMappings)
+            .filter(([, ruleId]) => ruleId)
+            .reduce((map, [columnName, ruleId]) => {
+              map[columnName] = ruleId;
+              return map;
+            }, {})
+        } : {
+          // Presidio相关参数
+          autoDetectColumns: formData.autoDetectColumns,
+          detectedColumns: detectedColumns.value.length > 0 ? JSON.stringify(detectedColumns.value) : null
+        }),
         outputFormat: formData.outputFormat,
         // 只有当输出格式为数据库时才包含输出表名
         ...(formData.outputFormat === 'database' && {
           outputTable: formData.outputTable
         })
       };
+      
+      // 打印发送到后端的数据进行调试
+      console.log('提交到后端的数据:', submitData);
 
       emit('submit', submitData);
     } catch (error) {
@@ -853,6 +978,18 @@ const cancel = () => {
 // 监听表名变化
 import { watch } from 'vue';
 watch(() => formData.tableName, watchTableName);
+
+// 监听maskingMethod变化
+watch(() => formData.maskingMethod, (newVal) => {
+  if (newVal === 'presidio') {
+    // 选择了Presidio，设置autoDetectColumns为true
+    formData.autoDetectColumns = true;
+    // 清空manual模式下选择的规则和映射
+    // formData.rules = [];
+    // formData.columnMappings = {};
+    ElMessage.info('已启用Presidio自动识别，系统将自动处理敏感数据');
+  }
+});
 
 // 组件挂载时，获取脱敏规则列表
 onMounted(() => {
@@ -918,6 +1055,58 @@ const showAISuggestion = () => {
     return;
   }
   aiSuggestionVisible.value = true;
+};
+
+// 预览敏感列
+const previewSensitiveColumns = async () => {
+  if (!formData.tableName) {
+    ElMessage.warning('请先选择表');
+    return;
+  }
+  
+  // 验证数据库连接参数
+  if (!formData.dbType || !formData.host || !formData.port || 
+      !formData.username || !formData.password || !formData.dbName) {
+    ElMessage.warning('请先完成数据库连接信息的填写');
+    return;
+  }
+  
+  previewLoading.value = true;
+  try {
+    // 准备数据库连接参数
+    const connectionParams = {
+      dbType: formData.dbType,
+      host: formData.host,
+      port: formData.port,
+      username: formData.username,
+      password: formData.password,
+      dbName: formData.dbName
+    };
+    
+    // 打印连接参数以进行调试
+    console.log('预览敏感列时的连接参数:', connectionParams);
+    
+    const response = await databaseApi.previewSensitiveColumns(
+      formData.tableName,
+      connectionParams
+    );
+    
+    // 打印响应以进行调试
+    console.log('预览敏感列API响应:', response.data);
+    
+    if (response.data.success) {
+      // 直接使用response.data作为数据源，因为它已经包含了columns数组
+      detectedColumns.value = response.data.columns || [];
+      ElMessage.success('预览敏感列识别结果成功');
+    } else {
+      ElMessage.error(response.data.message || '预览敏感列识别结果失败');
+    }
+  } catch (error) {
+    logger.error('预览敏感列识别结果失败:', error);
+    ElMessage.error('预览敏感列识别结果失败，请稍后重试');
+  } finally {
+    previewLoading.value = false;
+  }
 };
 </script>
 
@@ -1046,5 +1235,54 @@ h3 {
 
 .field-mapping-info {
   margin-bottom: 15px;
+}
+
+.presidio-info-section {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.sensitive-columns-preview {
+  margin-top: 10px;
+}
+
+.sensitive-column-tag {
+  margin-right: 5px;
+  margin-bottom: 5px;
+}
+
+.detected-columns-section {
+  margin-top: 10px;
+}
+
+.detected-columns-table {
+  margin-top: 10px;
+}
+
+.form-item-help {
+  margin-top: 5px;
+  color: #909399;
+  font-size: 12px;
+}
+
+/* 脱敏方式选择相关样式 */
+:deep(.el-radio-group) {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+:deep(.el-radio) {
+  margin-right: 20px;
+  padding: 8px 16px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+:deep(.el-radio.is-checked) {
+  background-color: #f0f9eb;
+  border-color: #67c23a;
 }
 </style> 
