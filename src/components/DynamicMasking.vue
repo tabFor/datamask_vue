@@ -96,7 +96,7 @@
         </div>
       </template>
       
-      <el-table :data="displayedRules" style="width: 100%">
+      <el-table :data="paginatedRules" style="width: 100%" :row-class-name="getRowClassName">
         <el-table-column label="数据库">
           <template #default>datamask</template>
         </el-table-column>
@@ -117,13 +117,34 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作">
+        <el-table-column label="操作" width="180">
           <template #default="scope">
-            <el-button type="primary" size="small" @click="editRule(scope.row)">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleteRule(scope.row.id)">删除</el-button>
+            <div class="action-buttons">
+              <el-button type="primary" size="small" @click="editRule(scope.row)">
+                <el-icon><Edit /></el-icon>
+                <span>编辑</span>
+              </el-button>
+              <el-button type="danger" size="small" @click="deleteRule(scope.row.id)">
+                <el-icon><Delete /></el-icon>
+                <span>删除</span>
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
+
+      <div class="pagination-container">
+        <el-pagination
+          v-if="rulesTotal > 0"
+          background
+          layout="prev, pager, next, sizes, total"
+          :total="rulesTotal"
+          :page-size="rulesPageSize"
+          :current-page="rulesCurrentPage"
+          @current-change="handleRulesPageChange"
+          @size-change="handleRulesSizeChange"
+        />
+      </div>
     </el-card>
     
     <!-- 添加/编辑规则对话框 -->
@@ -215,9 +236,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElLoading, ElMessageBox } from 'element-plus';
-import { Close } from '@element-plus/icons-vue';
+import { Close, Edit, Delete } from '@element-plus/icons-vue';
 import request from '@/utils/request';
 import logger from '@/utils/logger';
 import { maskingRulesApi, testDataApi } from '@/utils/api';
@@ -298,7 +319,62 @@ const formatCellValue = (value, column) => {
 // 脱敏规则
 const maskingRules = ref([]);
 const showOnlyActiveRules = ref(false);
-const displayedRules = ref([]);
+
+// 规则分页相关
+const rulesPageSize = ref(10);
+const rulesCurrentPage = ref(1);
+const rulesTotal = computed(() => displayedRules.value.length);
+
+// 分页后的规则数据
+const paginatedRules = computed(() => {
+  const start = (rulesCurrentPage.value - 1) * rulesPageSize.value;
+  const end = start + rulesPageSize.value;
+  return displayedRules.value.slice(start, end);
+});
+
+// 处理规则页码变化
+const handleRulesPageChange = (page) => {
+  rulesCurrentPage.value = page;
+};
+
+// 处理规则每页数量变化
+const handleRulesSizeChange = (size) => {
+  rulesPageSize.value = size;
+  rulesCurrentPage.value = 1; // 重置到第一页
+};
+
+// 基于当前选中表格的规则排序
+const sortedRules = computed(() => {
+  return [...maskingRules.value].sort((a, b) => {
+    // 首先按照是否为当前选中表格排序
+    if (a.tableName === selectedTable.value && b.tableName !== selectedTable.value) {
+      return -1;
+    }
+    if (a.tableName !== selectedTable.value && b.tableName === selectedTable.value) {
+      return 1;
+    }
+    // 其次按照启用状态排序
+    if (a.active && !b.active) {
+      return -1;
+    }
+    if (!a.active && b.active) {
+      return 1;
+    }
+    // 最后按照表名和列名排序
+    if (a.tableName !== b.tableName) {
+      return a.tableName.localeCompare(b.tableName);
+    }
+    return a.columnName.localeCompare(b.columnName);
+  });
+});
+
+// 显示的规则（根据过滤条件筛选）
+const displayedRules = computed(() => {
+  if (showOnlyActiveRules.value) {
+    return sortedRules.value.filter(rule => rule.active);
+  }
+  return sortedRules.value;
+});
 
 // 规则对话框
 const ruleDialogVisible = ref(false);
@@ -593,26 +669,22 @@ const fetchRulesFromBackend = async () => {
           ...rule,
           database: DATABASE_NAME
         }));
-        displayedRules.value = maskingRules.value;
         logger.debug('已从后端获取脱敏规则');
       } else {
         // 如果没有数据，确保本地规则为空数组
         maskingRules.value = [];
-        displayedRules.value = [];
         logger.warn('获取的脱敏规则为空');
       }
     } else {
       logger.error('获取脱敏规则失败: 响应数据为空');
       // 如果获取失败，确保本地规则为空数组
       maskingRules.value = [];
-      displayedRules.value = [];
     }
   } catch (error) {
     const errorMessage = handleApiError(error);
     logger.error('获取脱敏规则出错:', errorMessage);
     // 如果发生错误，确保本地规则为空数组
     maskingRules.value = [];
-    displayedRules.value = [];
   }
 };
 
@@ -828,14 +900,6 @@ const sendRulesToBackend = async () => {
         maskingRules.value = response.data.rules;
       }
       
-      // 如果当前显示的是所有规则，则刷新显示
-      if (!showOnlyActiveRules.value) {
-        displayedRules.value = maskingRules.value;
-      } else {
-        // 否则只显示激活的规则
-        updateDisplayedRules();
-      }
-      
       return true;
     } else {
       logger.error('同步脱敏规则失败: 响应数据为空');
@@ -851,25 +915,18 @@ const sendRulesToBackend = async () => {
 // 切换显示所有规则或只显示激活的规则
 const toggleActiveRulesDisplay = async () => {
   try {
-    if (showOnlyActiveRules.value) {
-      // 只显示激活的规则
-      const activeRules = await fetchActiveRulesFromBackend();
-      displayedRules.value = activeRules;
-      ElMessage.info('现在只显示激活的规则');
-    } else {
-      // 显示所有规则
-      await fetchRulesFromBackend(); // 重新获取所有规则
-      ElMessage.info('现在显示所有规则');
-    }
+    // 这里不需要特别的处理，因为displayedRules现在是计算属性
+    // 会自动根据showOnlyActiveRules的值更新
+    ElMessage.info(showOnlyActiveRules.value ? '现在只显示激活的规则' : '现在显示所有规则');
   } catch (error) {
     const errorMessage = handleApiError(error);
     ElMessage.error('切换规则显示失败: ' + errorMessage);
   }
 };
 
-// 更新显示的规则
-const updateDisplayedRules = () => {
-  displayedRules.value = maskingRules.value.filter(rule => rule.active);
+// 获取表格行的类名，当前查询表的规则使用特殊样式
+const getRowClassName = ({ row }) => {
+  return row.tableName === selectedTable.value ? 'current-table-row' : '';
 };
 </script>
 
@@ -1300,5 +1357,38 @@ const updateDisplayedRules = () => {
   text-align: center;
   color: #f56c6c;
   font-size: 16px;
+}
+
+/* 操作按钮样式优化 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.action-buttons .el-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+}
+
+.action-buttons .el-button .el-icon {
+  margin-right: 4px;
+}
+
+/* 表格高亮当前选中表的规则 */
+:deep(.el-table .current-table-row) {
+  background-color: rgba(26, 35, 126, 0.04) !important;
+}
+
+:deep(.el-table .current-table-row:hover > td) {
+  background-color: rgba(26, 35, 126, 0.08) !important;
+}
+
+:deep(.el-table .current-table-row td) {
+  font-weight: 500;
+  color: #1a237e;
 }
 </style> 

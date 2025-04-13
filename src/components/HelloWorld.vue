@@ -1,351 +1,369 @@
 <template>
-  <el-container class="dashboard">
-    <div class="dashboard-decoration">
-      <div class="decoration-circle circle-1"></div>
-      <div class="decoration-circle circle-2"></div>
-      <div class="decoration-circle circle-3"></div>
-    </div>
-    <el-main class="dashboard-main">
-      <div class="dashboard-header">
-        <div class="logo-container">
-          <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#1976D2;stop-opacity:1" />
-              </linearGradient>
-            </defs>
-            <!-- 外圈 -->
-            <circle cx="50" cy="50" r="45" fill="none" stroke="url(#logoGradient)" stroke-width="4"/>
-            <!-- 盾牌形状 -->
-            <path d="M50 15 L85 30 L85 70 L50 85 L15 70 L15 30 Z" 
-                  fill="url(#logoGradient)" 
-                  stroke="white" 
-                  stroke-width="2"/>
-            <!-- 数据流线条 -->
-            <path d="M30 50 L50 35 L70 50 L50 65 Z" 
-                  fill="none" 
-                  stroke="white" 
-                  stroke-width="3" 
-                  stroke-linecap="round"/>
-            <!-- 锁的图案 -->
-            <rect x="45" y="45" width="10" height="15" rx="2" fill="white"/>
-            <circle cx="50" cy="40" r="3" fill="white"/>
-          </svg>
+  <div class="dashboard">
+    <!-- 欢迎区域 -->
+    <div class="welcome-section">
+      <div class="welcome-content">
+        <div class="welcome-text">
+          <h1 class="welcome-title">
+            <span class="gradient-text">数据脱敏</span>
+            <span class="title-sub">安全、高效的敏感数据处理解决方案</span>
+          </h1>
+          <p class="welcome-description">
+            本系统提供全面的数据脱敏解决方案，包括敏感数据识别、静态数据脱敏、动态数据脱敏等功能，帮助您保护敏感数据安全，满足合规要求。
+          </p>
+          <div class="welcome-actions">
+            <el-button type="primary" size="large" class="action-button primary-action" @click="navigateTo('/tasks')">
+              <el-icon><DataAnalysis /></el-icon>
+              开始使用
+            </el-button>
+            <el-button size="large" class="action-button secondary-action" @click="navigateTo('/documentation')">
+              <el-icon><Reading /></el-icon>
+              了解更多
+            </el-button>
+          </div>
         </div>
-        <h1 class="dashboard-title">数据脱敏管理平台</h1>
-        <p class="dashboard-subtitle">安全、高效的敏感数据处理解决方案</p>
+        <div class="welcome-stats">
+          <div class="stat-card">
+            <div class="stat-number">99.9%</div>
+            <div class="stat-label">数据安全率</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">50+</div>
+            <div class="stat-label">脱敏算法</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">100%</div>
+            <div class="stat-label">合规性</div>
+          </div>
+        </div>
       </div>
-      
-      <!-- 数据操作员功能区 -->
-      <el-row :gutter="24" v-if="hasPermission([USER_ROLES.DATA_OPERATOR]) && !isAdmin" class="role-section">
-        <el-col :span="24">
-          <div class="section-title">数据操作员功能</div>
-        </el-col>
-        
-        <el-col :md="12" :lg="8">
-          <el-card class="feature-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><DataAnalysis /></el-icon>
-                </div>
-                <span>敏感数据识别</span>
-              </div>
-            </template>
-            <div class="card-content">
-              <p class="card-description">创建新的数据识别任务，自动识别敏感信息</p>
-              <el-button
-                type="primary"
-                class="card-button gradient-primary"
-                @click="navigateTo('/tasks')"
-              >
-                创建识别任务
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
+      <div class="welcome-illustration">
+        <div class="data-flow">
+          <div class="flow-line"></div>
+          <div class="flow-dot"></div>
+          <div class="flow-dot"></div>
+          <div class="flow-dot"></div>
+        </div>
+        <div class="security-shield">
+          <el-icon><Lock /></el-icon>
+        </div>
+      </div>
+    </div>
 
-        <el-col :md="12" :lg="8">
-          <el-card class="feature-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><Lock /></el-icon>
-                </div>
-                <span>静态数据脱敏</span>
-              </div>
-            </template>
-            <div class="card-content">
-              <p class="card-description">配置数据脱敏规则，保护敏感数据安全</p>
-              <el-button
-                type="success"
-                class="card-button gradient-success"
-                @click="navigateTo('/rules')"
-              >
-                配置脱敏规则
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
+    <!-- 学习资源区域 -->
+    <div class="resources-section">
+      <div class="section-header">
+        <div class="header-content">
+          <h2 class="section-title">
+            <span class="gradient-text">数据脱敏助手</span>
+            <span class="title-sub">您的数据安全专家</span>
+          </h2>
+          <div class="header-tags">
+            <el-tag type="success" effect="plain" class="md-tag">专业</el-tag>
+            <el-tag type="warning" effect="plain" class="md-tag">安全</el-tag>
+            <el-tag type="info" effect="plain" class="md-tag">高效</el-tag>
+          </div>
+        </div>
+        <p class="section-description">
+          我是您的数据脱敏专家，专注于解答数据安全、脱敏算法、合规性等相关问题。
+          请确保您的问题与数据脱敏相关，以便我能提供最专业的帮助。
+        </p>
+      </div>
 
-        <el-col :md="12" :lg="8">
-          <el-card class="feature-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><Connection /></el-icon>
-                </div>
-                <span>动态数据脱敏</span>
-              </div>
-            </template>
-            <div class="card-content">
-              <p class="card-description">实时数据库查询，动态脱敏处理</p>
-              <el-button
-                type="warning"
-                class="card-button gradient-warning"
-                @click="navigateTo('/dynamic')"
+      <div class="ai-assistant">
+        <div class="ai-chat-container">
+          <div class="chat-header">
+            <div class="header-left">
+              <h3>数据脱敏助手</h3>
+            </div>
+            <div class="header-right">
+              <el-button 
+                type="text" 
+                class="new-chat-button"
+                @click="startNewChat"
               >
-                数据库查询
+                <el-icon><Refresh /></el-icon>
+                新对话
               </el-button>
             </div>
-          </el-card>
-        </el-col>
-      </el-row>
-      
-      <!-- 数据分析师功能区 -->
-      <el-row :gutter="24" v-if="hasPermission([USER_ROLES.DATA_ANALYST]) && !isAdmin" class="role-section">
-        <el-col :span="24">
-          <div class="section-title">数据分析师功能</div>
-        </el-col>
-        
-        <el-col :md="12" :lg="8" :offset="isAnalystOnly ? 8 : 0">
-          <el-card class="feature-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><PieChart /></el-icon>
-                </div>
-                <span>数据分析</span>
+          </div>
+          <div class="chat-messages" ref="chatMessages">
+            <div class="ai-message" v-if="messages.length === 0">
+              <div class="ai-avatar">
+                <el-icon><ChatDotRound /></el-icon>
               </div>
-            </template>
-            <div class="card-content">
-              <p class="card-description">深入分析数据，生成可视化报表</p>
-              <el-button
-                type="success"
-                class="card-button gradient-success"
-                @click="navigateTo('/analysis')"
-              >
-                进行数据分析
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-      
-      <!-- 管理员功能卡片 - 所有功能 -->
-      <el-row :gutter="24" v-if="isAdmin">
-        <el-col :span="24">
-          <div class="section-title">数据处理功能</div>
-        </el-col>
-        <el-col :md="12" :lg="6">
-          <el-card class="feature-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><DataAnalysis /></el-icon>
+              <div class="message-content">
+                <p>您好！我是您的数据脱敏助手，我可以帮您：</p>
+                <div class="quick-actions">
+                  <el-button 
+                    v-for="(action, index) in quickActions" 
+                    :key="index"
+                    class="quick-action-button"
+                    @click="handleQuickAction(action)"
+                  >
+                    {{ action }}
+                  </el-button>
                 </div>
-                <span>敏感数据识别</span>
               </div>
-            </template>
-            <div class="card-content">
-              <p class="card-description">创建新的数据识别任务，自动识别敏感信息</p>
-              <el-button
-                type="primary"
-                class="card-button gradient-primary"
-                @click="navigateTo('/tasks')"
-              >
-                创建识别任务
-              </el-button>
             </div>
-          </el-card>
-        </el-col>
 
-        <el-col :md="12" :lg="6">
-          <el-card class="feature-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><Lock /></el-icon>
+            <template v-for="(message, index) in messages" :key="index">
+              <div class="message-wrapper" :class="{ 'user-message': message.role === 'user' }">
+                <div class="ai-message">
+                  <div class="ai-avatar" v-if="message.role === 'assistant'">
+                    <el-icon><ChatDotRound /></el-icon>
+                  </div>
+                  <div class="user-avatar" v-else>
+                    <el-icon><User /></el-icon>
+                  </div>
+                  <div class="message-content">
+                    <div class="answer-content" v-html="message.content"></div>
+                    <el-collapse v-if="message.thinking" class="thinking-collapse">
+                      <el-collapse-item title="查看分析过程">
+                        <div class="thinking-content">{{ message.thinking }}</div>
+                      </el-collapse-item>
+                    </el-collapse>
+                  </div>
                 </div>
-                <span>静态数据脱敏</span>
               </div>
             </template>
-            <div class="card-content">
-              <p class="card-description">配置数据脱敏规则，保护敏感数据安全</p>
-              <el-button
-                type="success"
-                class="card-button gradient-success"
-                @click="navigateTo('/rules')"
-              >
-                配置脱敏规则
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
 
-        <el-col :md="12" :lg="6">
-          <el-card class="feature-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><Connection /></el-icon>
-                </div>
-                <span>动态数据脱敏</span>
+            <div v-if="aiLoading && messages.length > 0 && messages[messages.length - 1].role === 'user'" class="loading-message">
+              <div class="ai-avatar">
+                <el-icon><ChatDotRound /></el-icon>
               </div>
-            </template>
-            <div class="card-content">
-              <p class="card-description">实时数据库查询，动态脱敏处理</p>
-              <el-button
-                type="warning"
-                class="card-button gradient-warning"
-                @click="navigateTo('/dynamic')"
-              >
-                数据库查询
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
-        
-        <el-col :md="12" :lg="6">
-          <el-card class="feature-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><PieChart /></el-icon>
+              <div class="message-content">
+                <div class="typing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
                 </div>
-                <span>数据分析</span>
               </div>
-            </template>
-            <div class="card-content">
-              <p class="card-description">深入分析数据，生成可视化报表</p>
-              <el-button
-                type="success"
-                class="card-button gradient-success"
-                @click="navigateTo('/analysis')"
-              >
-                进行数据分析
-              </el-button>
             </div>
-          </el-card>
-        </el-col>
-      </el-row>
+          </div>
 
-      <el-row :gutter="24" class="admin-section" v-if="isAdmin">
-        <el-col :span="24">
-          <div class="section-title">管理员功能</div>
-        </el-col>
-        <el-col :md="12" :lg="8">
-          <el-card class="feature-card admin-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><Setting /></el-icon>
-                </div>
-                <span>系统管理</span>
-              </div>
-            </template>
-            <div class="card-content">
-              <p class="card-description">管理用户权限及系统配置</p>
-              <el-button
-                type="danger"
-                class="card-button gradient-danger"
-                @click="navigateTo('/security')"
-              >
-                系统管理
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
-        
-        <el-col :md="12" :lg="8">
-          <el-card class="feature-card admin-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><Document /></el-icon>
-                </div>
-                <span>审计日志</span>
-              </div>
-            </template>
-            <div class="card-content">
-              <p class="card-description">查看系统操作记录，监控异常行为</p>
-              <el-button
-                type="info"
-                class="card-button gradient-info"
-                @click="navigateTo('/audit')"
-              >
-                查看日志
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
-        
-        <el-col :md="12" :lg="8">
-          <el-card class="feature-card admin-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <div class="icon-wrapper">
-                  <el-icon><Monitor /></el-icon>
-                </div>
-                <span>Presidio测试</span>
-              </div>
-            </template>
-            <div class="card-content">
-              <p class="card-description">测试Presidio敏感信息识别和脱敏功能</p>
-              <el-button
-                type="primary"
-                class="card-button gradient-primary"
-                @click="navigateTo('/presidio-test')"
-              >
-                测试功能
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </el-main>
-  </el-container>
+          <div class="ai-input-container">
+            <el-input
+              v-model="userQuestion"
+              placeholder="请输入您的问题..."
+              :disabled="aiLoading"
+              @keyup.enter="askAI"
+              class="ai-input"
+            >
+              <template #prefix>
+                <el-icon><Edit /></el-icon>
+              </template>
+              <template #append>
+                <el-button
+                  type="primary"
+                  :loading="aiLoading"
+                  @click="askAI"
+                  class="send-button"
+                >
+                  <span class="send-text">发送 &#10148;</span>
+                </el-button>
+              </template>
+            </el-input>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { USER_ROLES, hasPermission } from '@/utils/permission';
 import {
   DataAnalysis,
   Lock,
-  Connection,
-  PieChart,
-  Document,
-  Setting,
-  Monitor,
+  Reading,
+  ChatDotRound,
+  Edit,
+  User,
+  Refresh
 } from '@element-plus/icons-vue';
 
+const router = useRouter();
 const isLoggedIn = ref(false);
 const userName = ref('');
 const userRole = ref('');
+const userQuestion = ref('');
+const aiLoading = ref(false);
+const chatMessages = ref(null);
 
-// 判断是否为管理员
-const isAdmin = computed(() => {
-  return userRole.value === USER_ROLES.ADMIN;
-});
+const messages = ref([]);
 
-// 判断是否仅为数据分析师
-const isAnalystOnly = computed(() => {
-  return userRole.value === USER_ROLES.DATA_ANALYST;
-});
+const quickActions = [
+  '如何选择合适的脱敏算法？',
+  '如何评估脱敏效果？',
+  '如何处理特殊字符？',
+  '如何配置脱敏规则？'
+];
+
+const handleQuickAction = (action) => {
+  userQuestion.value = action;
+  askAI();
+};
+
+const scrollToBottom = async () => {
+  await nextTick();
+  if (chatMessages.value) {
+    chatMessages.value.scrollTop = chatMessages.value.scrollHeight;
+  }
+};
+
+const extractThinkingContent = (text) => {
+  const thinkMatch = text.match(/<think>(.*?)<\/think>/s);
+  if (thinkMatch) {
+    return thinkMatch[1].trim();
+  }
+  return null;
+};
+
+const removeThinkTags = (text) => {
+  return text.replace(/<think>.*?<\/think>/s, '').trim();
+};
+
+const askAI = async () => {
+  if (!userQuestion.value.trim()) {
+    ElMessage.warning('请输入您的问题');
+    return;
+  }
+
+  const userMessage = userQuestion.value;
+  messages.value.push({
+    role: 'user',
+    content: userMessage
+  });
+  userQuestion.value = '';
+  aiLoading.value = true;
+  await scrollToBottom();
+
+  let aiMessage = {
+    role: 'assistant',
+    content: '',
+    thinking: ''
+  };
+
+  messages.value.push(aiMessage);
+  await scrollToBottom();
+
+  try {
+    const response = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'deepseek-r1:1.5b',
+        prompt: `你是一个专业的数据脱敏专家，专注于数据安全、脱敏算法和合规性相关的问题。请遵循以下规则：
+
+1. 如果用户的问题与数据脱敏无关，请礼貌地告知用户你只能回答与数据脱敏相关的问题，并建议用户提出相关的问题。
+
+2. 对于数据脱敏相关的问题，请提供专业、详细的回答，包括：
+   - 问题分析
+   - 解决方案
+   - 最佳实践建议
+
+3. 使用简洁明了的语言，避免过于技术性的术语。
+
+4. 如果问题涉及具体的技术实现，请提供示例代码或配置说明。
+
+5. 始终强调数据安全和合规性的重要性。
+
+用户问题：${userMessage}
+
+<think>
+请思考：
+1. 问题的核心要点
+2. 相关的数据安全标准
+3. 可能的解决方案
+4. 实际应用中的注意事项
+</think>
+
+请用简洁明了的语言回答。`
+      })
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullResponse = '';
+    let currentContent = '';
+    let currentThinking = '';
+
+    let reading = true;
+    while (reading) {
+      const { done, value } = await reader.read();
+      if (done) {
+        reading = false;
+        break;
+      }
+      
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+      
+      for (const line of lines) {
+        if (line.trim()) {
+          try {
+            const data = JSON.parse(line);
+            if (data.response) {
+              fullResponse += data.response;
+              const processedResponse = processResponse(fullResponse);
+              
+              // 只有当内容发生变化时才更新消息
+              if (processedResponse.content !== currentContent || processedResponse.thinking !== currentThinking) {
+                currentContent = processedResponse.content;
+                currentThinking = processedResponse.thinking;
+                
+                // 更新消息对象
+                aiMessage.content = currentContent;
+                if (currentThinking) {
+                  aiMessage.thinking = currentThinking;
+                }
+                
+                // 触发响应式更新
+                messages.value = [...messages.value];
+                await scrollToBottom();
+              }
+            }
+          } catch (e) {
+            console.error('解析响应数据失败:', e);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('AI请求失败:', error);
+    ElMessage.error('获取回答失败，请稍后重试');
+    // 如果发生错误，移除加载中的消息
+    messages.value = messages.value.filter(msg => msg !== aiMessage);
+  } finally {
+    aiLoading.value = false;
+  }
+};
+
+const processResponse = (text) => {
+  const thinking = extractThinkingContent(text);
+  const content = removeThinkTags(text)
+    .replace(/\n/g, '<br>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\d+\./g, '<br>$&')
+    .replace(/<br><br>/g, '<br>');
+  
+  return {
+    content,
+    thinking
+  };
+};
+
+const startNewChat = () => {
+  messages.value = [];
+  userQuestion.value = '';
+  aiLoading.value = false;
+};
 
 // 在组件挂载时检查登录状态
 onMounted(() => {
@@ -357,8 +375,7 @@ onMounted(() => {
   }
 });
 
-const router = useRouter();
-// 定义一个通用的跳转函数
+// 导航函数
 const navigateTo = (path) => {
   if (!isLoggedIn.value && path !== '/login') {
     ElMessage.warning('请先登录，再进行此操作');
@@ -370,527 +387,716 @@ const navigateTo = (path) => {
 
 <style scoped>
 .dashboard {
-  min-height: 100vh;
-  background-color: #f9fafc;
-  background-image: linear-gradient(135deg, #f9fafc 0%, #f5f7fa 100%);
+  padding: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+}
+
+/* 欢迎区域样式 */
+.welcome-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 120px 0;
+  margin-bottom: 80px;
   position: relative;
   overflow: hidden;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-.dashboard-decoration {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.decoration-circle {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.5;
-}
-
-.circle-1 {
-  top: -150px;
-  right: -100px;
-  width: 500px;
-  height: 500px;
-  background: linear-gradient(135deg, rgba(66, 184, 131, 0.2), rgba(53, 73, 94, 0.1));
-  animation: float-slow 15s infinite alternate ease-in-out;
-}
-
-.circle-2 {
-  bottom: -200px;
-  left: -150px;
-  width: 600px;
-  height: 600px;
-  background: linear-gradient(135deg, rgba(53, 73, 94, 0.1), rgba(66, 184, 131, 0.2));
-  animation: float-slow 20s infinite alternate-reverse ease-in-out;
-}
-
-.circle-3 {
-  top: 30%;
-  right: 25%;
-  width: 300px;
-  height: 300px;
-  background: linear-gradient(135deg, rgba(66, 184, 131, 0.1), rgba(255, 183, 77, 0.1));
-  animation: float-slow 18s infinite alternate ease-in-out;
-}
-
-@keyframes float-slow {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(40px, 40px);
-  }
-}
-
-.dashboard-main {
-  padding: 50px 40px;
-  max-width: 1400px;
-  margin: 0 auto;
+.welcome-content {
+  flex: 1;
+  max-width: 600px;
   position: relative;
   z-index: 1;
+  padding: 0 48px;
 }
 
-.dashboard-header {
-  text-align: center;
-  margin-bottom: 40px;
+.welcome-text {
+  margin-bottom: 48px;
+}
+
+.welcome-title {
+  font-size: 60px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 16px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.title-sub {
+  display: block;
+  font-size: 24px;
+  font-weight: 400;
+  color: #666;
+  margin-top: 8px;
+  letter-spacing: 0.02em;
+}
+
+.welcome-description {
+  font-size: 16px;
+  color: #666;
+  line-height: 1.8;
+  margin-bottom: 32px;
+  max-width: 500px;
+  letter-spacing: 0.5px;
+}
+
+.welcome-actions {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  gap: 16px;
 }
 
-.logo-container {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 20px;
-  background: #fff;
-  border-radius: 20px;
-  padding: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+  height: 48px;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  letter-spacing: 0.75px;
+  text-transform: uppercase;
+}
+
+.primary-action {
+  background-color: #1976D2;
+  color: white;
+  box-shadow: 0 3px 1px -2px rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 1px 5px 0 rgba(0,0,0,.12);
+}
+
+.secondary-action {
+  color: #1976D2;
+  background-color: transparent;
+  border: 1px solid #1976D2;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12);
+}
+
+.welcome-stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 48px;
+  padding-top: 48px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.stat-card {
+  text-align: center;
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.stat-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  transform: translateY(-5px);
+}
+
+.stat-number {
+  font-size: 36px;
+  font-weight: 700;
+  color: #1976D2;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+}
+
+.welcome-illustration {
+  flex: 1;
+  max-width: 500px;
+  position: relative;
+  height: 400px;
+}
+
+.data-flow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+}
+
+.flow-line {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(to bottom, #1976D2, transparent);
+  transform: rotate(45deg);
+}
+
+.flow-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #1976D2;
+  border-radius: 50%;
+  animation: float 3s ease-in-out infinite;
+}
+
+.flow-dot:nth-child(2) {
+  top: 20%;
+  left: 20%;
+  animation-delay: 0.2s;
+}
+
+.flow-dot:nth-child(3) {
+  top: 50%;
+  left: 50%;
+  animation-delay: 0.4s;
+}
+
+.flow-dot:nth-child(4) {
+  top: 80%;
+  left: 80%;
+  animation-delay: 0.6s;
+}
+
+.security-shield {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  background: rgba(25, 118, 210, 0.1);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: pulse 2s ease-in-out infinite;
 }
 
-.logo {
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-  animation: logoFloat 3s ease-in-out infinite;
+.security-shield .el-icon {
+  font-size: 48px;
+  color: #1976D2;
 }
 
-@keyframes logoFloat {
+@keyframes float {
   0%, 100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-20px);
   }
 }
 
-.dashboard-title {
-  margin: 0;
-  font-size: 36px;
-  font-weight: 600;
-  color: #1a1a1a;
-  letter-spacing: -0.5px;
+@keyframes pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
 }
 
-.dashboard-subtitle {
-  margin: 12px 0 0;
-  font-size: 18px;
-  color: #666;
-  letter-spacing: 0.5px;
-}
-
-.feature-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  transition: all 0.4s ease;
-  border: none;
-  position: relative;
-  background-color: white;
-}
-
-.feature-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 15px 35px rgba(50, 50, 93, 0.1), 0 5px 15px rgba(0, 0, 0, 0.07);
-}
-
-.feature-card:before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, #42b883, #35495e);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.feature-card:hover:before {
-  opacity: 1;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 24px 28px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(249, 250, 252, 0.9));
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
-}
-
-.feature-card:hover .card-header {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(249, 250, 252, 0.95));
-}
-
-.icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(66, 184, 131, 0.15), rgba(53, 73, 94, 0.05));
-  box-shadow: 0 4px 12px rgba(66, 184, 131, 0.1);
-  transition: all 0.3s ease;
-}
-
-.feature-card:hover .icon-wrapper {
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(66, 184, 131, 0.15);
-}
-
-.icon-wrapper .el-icon {
-  font-size: 26px;
-  color: #42b883;
-  transition: all 0.3s ease;
-}
-
-.feature-card:hover .icon-wrapper .el-icon {
-  color: #35495e;
-}
-
-.card-header span {
-  color: #35495e;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-  transition: all 0.3s ease;
-}
-
-.feature-card:hover .card-header span {
-  color: #42b883;
-}
-
-.card-content {
-  padding: 30px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background-color: white;
-}
-
-.card-description {
-  color: #606266;
-  font-size: 16px;
-  margin: 0 0 28px 0;
-  line-height: 1.7;
-  transition: all 0.3s ease;
-}
-
-.feature-card:hover .card-description {
-  color: #303133;
-}
-
-.card-button {
-  width: 100%;
-  padding: 14px 20px;
+/* 学习资源区域样式 */
+.resources-section {
+  padding: 80px 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
   border-radius: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  transition: all 0.3s ease;
-  font-size: 15px;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-  border: none;
-  background-size: 200% 100%;
-  background-position: 0% 0%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-.card-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.2), 0 3px 6px rgba(0, 0, 0, 0.12);
-  background-position: 100% 0%;
-  filter: brightness(1.05);
+.section-header {
+  text-align: center;
+  margin-bottom: 48px;
+  padding: 0 24px;
 }
 
-.gradient-primary {
-  background: linear-gradient(135deg, #007AFF 0%, #00B4FF 100%);
-  color: white;
-  border: none;
-}
-
-.gradient-success {
-  background: linear-gradient(135deg, #34C759 0%, #00E5A0 100%);
-  color: white;
-  border: none;
-}
-
-.gradient-warning {
-  background: linear-gradient(135deg, #FF9500 0%, #FFB340 100%);
-  color: white;
-  border: none;
-}
-
-.gradient-info {
-  background: linear-gradient(135deg, #5856D6 0%, #007AFF 100%);
-  color: white;
-  border: none;
-}
-
-.gradient-danger {
-  background: linear-gradient(135deg, #FF3B30 0%, #FF6B6B 100%);
-  color: white;
-  border: none;
-}
-
-.el-button.card-button.is-plain {
-  background-color: transparent;
-  border: 2px solid currentColor;
-  opacity: 0.9;
-}
-
-.el-button.card-button.is-plain:hover {
-  opacity: 1;
-  background-color: rgba(66, 184, 131, 0.05);
-}
-
-.admin-section {
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  position: relative;
-}
-
-.admin-section:before {
-  content: none; /* 删除之前的伪元素 */
+.header-content {
+  margin-bottom: 24px;
 }
 
 .section-title {
-  text-align: center;
-  margin: 30px 0 20px;
-  position: relative;
-  color: #35495e;
+  font-size: 34px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 16px;
+  letter-spacing: -0.02em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title-sub {
+  font-size: 16px;
+  color: #666;
+  font-weight: 400;
+  margin-top: 8px;
+  letter-spacing: 0.15px;
+}
+
+.header-tags {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.md-tag {
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 16px;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+}
+
+.section-description {
+  font-size: 16px;
+  color: #666;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+}
+
+.ai-assistant {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+  margin: 0 24px;
+}
+
+.ai-assistant:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.ai-chat-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 16px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.header-left h3 {
+  margin: 0;
   font-size: 20px;
   font-weight: 600;
-  padding-bottom: 10px;
+  color: #333;
 }
 
-.section-title:after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 3px;
-  background: linear-gradient(90deg, #42b883, #35495e);
-  border-radius: 3px;
+.new-chat-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #1976D2;
+  font-size: 14px;
+  padding: 0 8px;
+  height: 36px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
 }
 
-.role-section {
-  margin-bottom: 40px;
+.new-chat-button:hover {
+  background: rgba(25, 118, 210, 0.1);
 }
 
-.admin-section {
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+.new-chat-button .el-icon {
+  font-size: 18px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-bottom: 24px;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-wrapper {
+  margin-bottom: 24px;
+  animation: fadeIn 0.3s ease;
+}
+
+.message-wrapper.user-message {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.user-message .ai-message {
+  flex-direction: row-reverse;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-avatar .el-icon {
+  font-size: 20px;
+  color: white;
+}
+
+.ai-message {
+  display: flex;
+  gap: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+.ai-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ai-avatar .el-icon {
+  font-size: 20px;
+  color: white;
+}
+
+.message-content {
+  flex: 1;
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  line-height: 1.6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  max-width: 80%;
+  letter-spacing: 0.25px;
+}
+
+.user-message .message-content {
+  background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+  color: white;
+}
+
+.answer-content {
+  white-space: pre-wrap;
+  color: inherit;
+  line-height: 1.6;
+}
+
+.answer-content strong {
+  color: #1976D2;
+  font-weight: 500;
+}
+
+.user-message .answer-content strong {
+  color: white;
+}
+
+.answer-content em {
+  font-style: italic;
+  color: #666;
+}
+
+.user-message .answer-content em {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.quick-action-button {
+  background: rgba(25, 118, 210, 0.1);
+  color: #1976D2;
+  border: none;
+  padding: 0 16px;
+  height: 36px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+  letter-spacing: 0.25px;
+}
+
+.quick-action-button:hover {
+  background: rgba(25, 118, 210, 0.2);
+}
+
+.ai-input-container {
+  margin-top: 24px;
   position: relative;
 }
 
-.admin-card {
-  min-height: 220px;
-  background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.99), rgba(255, 255, 255, 0.95));
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
+.ai-input {
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.admin-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(50, 50, 93, 0.12), 0 10px 20px rgba(0, 0, 0, 0.08);
+.ai-input :deep(.el-input__wrapper) {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: white;
 }
 
-.admin-card:before {
-  background: linear-gradient(90deg, #35495e, #42b883);
-  height: 5px;
+.ai-input :deep(.el-input__prefix) {
+  color: #1976D2;
+  margin-right: 8px;
 }
 
-.admin-card .icon-wrapper {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, rgba(53, 73, 94, 0.15), rgba(66, 184, 131, 0.1));
+.send-button {
+  height: 100%;
+  padding: 0 20px;
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+  border: none;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.admin-card .card-button {
-  font-weight: 600;
+.send-button:hover {
+  background: #1976D2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.24), 0 4px 8px rgba(0,0,0,0.12);
 }
 
-/* 响应式设计优化 */
-@media (max-width: 1200px) {
-  .dashboard-main {
-    padding: 40px 30px;
+.send-text {
+  color: white;
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.75px;
+  text-transform: uppercase;
+}
+
+.thinking-collapse {
+  margin-top: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.thinking-content {
+  padding: 12px;
+  background-color: #fff;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #666;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.25px;
+}
+
+:deep(.el-collapse-item__header) {
+  font-size: 14px;
+  color: #666;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 12px 16px;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+}
+
+:deep(.el-collapse-item__content) {
+  padding: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  
-  .el-col {
-    margin-bottom: 30px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media (max-width: 992px) {
-  .dashboard-main {
-    padding: 35px 25px;
+.loading-message {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  animation: fadeIn 0.3s ease;
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background: #1976D2;
+  border-radius: 50%;
+  animation: typing 1s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
   }
-  
-  .el-col {
-    margin-bottom: 25px;
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .welcome-section {
+    flex-direction: column;
+    text-align: center;
+    padding: 80px 24px;
+  }
+
+  .welcome-content {
+    max-width: 100%;
+    margin-bottom: 48px;
+    padding: 0;
+  }
+
+  .welcome-illustration {
+    max-width: 100%;
+    height: 300px;
+  }
+
+  .welcome-actions {
+    justify-content: center;
+  }
+
+  .welcome-stats {
+    justify-content: center;
+  }
+
+  .welcome-description {
+    margin: 0 auto 32px;
   }
 }
 
 @media (max-width: 768px) {
-  .dashboard-main {
-    padding: 30px 20px;
+  .welcome-title {
+    font-size: 48px;
   }
-  
-  .dashboard-title {
-    font-size: 28px;
-  }
-  
-  .dashboard-subtitle {
-    font-size: 15px;
-    margin-bottom: 30px;
-  }
-  
-  .card-header {
-    padding: 20px 24px;
-  }
-  
-  .icon-wrapper {
-    width: 46px;
-    height: 46px;
-  }
-  
-  .icon-wrapper .el-icon {
-    font-size: 22px;
-  }
-  
-  .card-header span {
-    font-size: 18px;
-  }
-  
-  .card-content {
-    padding: 24px;
-  }
-  
-  .card-description {
-    font-size: 14px;
-    margin-bottom: 20px;
-  }
-  
-  .card-button {
-    padding: 12px 16px;
-    font-size: 14px;
-  }
-  
-  .admin-section {
-    margin-top: 40px;
-    padding-top: 40px;
-  }
-}
 
-@media (max-width: 480px) {
-  .dashboard-main {
-    padding: 25px 15px;
-  }
-  
-  .dashboard-title {
-    font-size: 24px;
-  }
-  
-  .dashboard-subtitle {
-    font-size: 14px;
-    margin-bottom: 25px;
-  }
-  
-  .card-header {
-    padding: 16px 20px;
-  }
-  
-  .icon-wrapper {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .icon-wrapper .el-icon {
+  .title-sub {
     font-size: 20px;
   }
-  
-  .card-header span {
+
+  .welcome-description {
     font-size: 16px;
   }
-  
-  .card-content {
-    padding: 20px;
+
+  .section-title {
+    font-size: 28px;
   }
-}
 
-/* 动画效果优化 */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
+  .ai-chat-container {
+    padding: 16px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .ai-message {
+    gap: 12px;
   }
-}
 
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
+  .ai-avatar, .user-avatar {
+    width: 32px;
+    height: 32px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .ai-avatar .el-icon, .user-avatar .el-icon {
+    font-size: 16px;
   }
-}
 
-.el-col {
-  animation: fadeInUp 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
+  .message-content {
+    padding: 12px;
+  }
 
-.el-col:nth-child(1) { animation-delay: 0.1s; }
-.el-col:nth-child(2) { animation-delay: 0.2s; }
-.el-col:nth-child(3) { animation-delay: 0.3s; }
-.el-col:nth-child(4) { animation-delay: 0.4s; }
-.el-col:nth-child(5) { animation-delay: 0.5s; }
-.el-col:nth-child(6) { animation-delay: 0.6s; }
+  .quick-actions {
+    flex-direction: column;
+  }
 
-/* 添加精美阴影效果 */
-.feature-card::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 5%;
-  width: 90%;
-  height: 10px;
-  filter: blur(12px);
-  background: linear-gradient(90deg, rgba(0,0,0,0.05), rgba(0,0,0,0.08), rgba(0,0,0,0.05));
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.feature-card:hover::after {
-  opacity: 1;
+  .quick-action-button {
+    width: 100%;
+  }
 }
 </style>

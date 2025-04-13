@@ -3,6 +3,7 @@ import MainLayout from '@/components/MainLayout.vue';
 import UserLogin from '@/components/UserLogin.vue';
 import { USER_ROLES, hasPermission } from '@/utils/permission';
 import { usersApi } from '@/utils/api';
+import SystemDocumentation from '@/views/SystemDocumentation.vue'
 
 // 页面加载状态管理
 import NProgress from 'nprogress';
@@ -107,6 +108,15 @@ const routes = [
     meta: { 
       requiresAuth: false,
       title: '登录'
+    }
+  },
+  {
+    path: '/documentation',
+    name: 'SystemDocumentation',
+    component: SystemDocumentation,
+    meta: {
+      title: '系统文档',
+      requiresAuth: true
     }
   }
 ];

@@ -1,40 +1,78 @@
 <template>
   <div class="login-page">
-    <div class="login-background">
-      <div class="google-shapes">
-        <div class="g-shape g-shape-blue"></div>
-        <div class="g-shape g-shape-red"></div>
-        <div class="g-shape g-shape-yellow"></div>
-        <div class="g-shape g-shape-green"></div>
-      </div>
-      <div class="dot-grid"></div>
+    <div class="login-background" />
+    <div class="google-shapes">
+      <div class="g-shape g-shape-blue" />
+      <div class="g-shape g-shape-red" />
+      <div class="g-shape g-shape-yellow" />
+      <div class="g-shape g-shape-green" />
     </div>
+    <div class="dot-grid" />
     <div class="login-container">
       <div class="login-header">
         <div class="logo-container">
-          <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            class="logo"
+            viewBox="0 0 100 100"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <defs>
-              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#4285F4;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#34A853;stop-opacity:1" />
+              <linearGradient
+                id="logoGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
+                <stop
+                  offset="0%"
+                  style="stop-color:#4285F4;stop-opacity:1"
+                />
+                <stop
+                  offset="100%"
+                  style="stop-color:#34A853;stop-opacity:1"
+                />
               </linearGradient>
             </defs>
             <!-- 外圈 -->
-            <circle cx="50" cy="50" r="45" fill="none" stroke="url(#logoGradient)" stroke-width="4"/>
+            <circle
+              cx="50"
+              cy="50"
+              r="45"
+              fill="none"
+              stroke="url(#logoGradient)"
+              stroke-width="4"
+            />
             <!-- 盾牌形状 -->
-            <path d="M50 15 L85 30 L85 70 L50 85 L15 70 L15 30 Z" 
-                  fill="url(#logoGradient)" 
-                  stroke="white" 
-                  stroke-width="2"/>
+            <path
+              d="M50 15 L85 30 L85 70 L50 85 L15 70 L15 30 Z"
+              fill="url(#logoGradient)"
+              stroke="white"
+              stroke-width="2"
+            />
             <!-- 数据流线条 -->
-            <path d="M30 50 L50 35 L70 50 L50 65 Z" 
-                  fill="none" 
-                  stroke="white" 
-                  stroke-width="3" 
-                  stroke-linecap="round"/>
+            <path
+              d="M30 50 L50 35 L70 50 L50 65 Z"
+              fill="none"
+              stroke="white"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
             <!-- 锁的图案 -->
-            <rect x="45" y="45" width="10" height="15" rx="2" fill="white"/>
-            <circle cx="50" cy="40" r="3" fill="white"/>
+            <rect
+              x="45"
+              y="45"
+              width="10"
+              height="15"
+              rx="2"
+              fill="white"
+            />
+            <circle
+              cx="50"
+              cy="40"
+              r="3"
+              fill="white"
+            />
           </svg>
         </div>
         <h2>数据脱敏系统</h2>
@@ -46,6 +84,8 @@
         :rules="rules"
         label-position="top"
         class="login-form"
+        method="post"
+        action="/login"
       >
         <el-form-item
           label="用户名"
@@ -53,9 +93,11 @@
         >
           <el-input
             v-model="loginForm.username"
-            autocomplete="username"
+            :autocomplete="rememberMe ? 'username' : 'off'"
             class="google-input"
             placeholder="请输入用户名"
+            name="username"
+            type="text"
           >
             <template #prefix>
               <el-icon><User /></el-icon>
@@ -69,10 +111,11 @@
           <el-input 
             v-model="loginForm.password" 
             :type="passwordVisible ? 'text' : 'password'" 
-            autocomplete="current-password"
+            :autocomplete="rememberMe ? 'current-password' : 'off'"
             class="google-input"
             placeholder="请输入密码"
             @keyup.enter="handleLogin"
+            name="password"
           >
             <template #prefix>
               <el-icon><Lock /></el-icon>
@@ -148,14 +191,6 @@ const showForgotPasswordDialog = () => {
 const handleLogin = () => {
   loginFormRef.value.validate((valid) => {
     if (valid) {
-      // 如果勾选了记住我，设置autocomplete属性
-      if (rememberMe.value) {
-        const usernameInput = document.querySelector('input[type="text"]');
-        const passwordInput = document.querySelector('input[type="password"]');
-        if (usernameInput) usernameInput.setAttribute('autocomplete', 'username');
-        if (passwordInput) passwordInput.setAttribute('autocomplete', 'current-password');
-      }
-      
       usersApi.login({
         username: loginForm.username,
         password: loginForm.password
