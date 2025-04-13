@@ -55,7 +55,7 @@
     <!-- 侧边栏和主内容区域 -->
     <div class="main-content">
       <!-- 侧边栏导航 -->
-      <el-aside class="layout-aside" :width="isCollapse ? '64px' : '240px'">
+      <el-aside class="layout-aside" :class="{ collapsed: isCollapse }" :width="isCollapse ? '64px' : '240px'">
         <div class="aside-header">
           <el-button
             type="text"
@@ -128,7 +128,7 @@
       </el-aside>
 
       <!-- 主内容区域 -->
-      <el-main class="layout-main">
+      <el-main class="layout-main" :class="{ collapsed: isCollapse }">
         <div class="main-container">
           <router-view v-slot="{ Component, route }">
             <transition name="fade" mode="out-in">
@@ -243,8 +243,10 @@ watch(() => route.path, () => {
   height: 64px;
   display: flex;
   align-items: center;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
@@ -327,6 +329,7 @@ watch(() => route.path, () => {
 .main-content {
   display: flex;
   flex: 1;
+  margin-top: 64px; /* 为固定定位的头部留出空间 */
   overflow: hidden;
 }
 
@@ -336,6 +339,11 @@ watch(() => route.path, () => {
   transition: width 0.3s ease;
   display: flex;
   flex-direction: column;
+  position: fixed;
+  top: 64px;
+  bottom: 0;
+  left: 0;
+  z-index: 99;
 }
 
 .aside-header {
@@ -366,6 +374,8 @@ watch(() => route.path, () => {
   padding: 24px;
   overflow-y: auto;
   background-color: #f5f7fa;
+  margin-left: 240px; /* 为固定定位的侧边栏留出空间 */
+  transition: margin-left 0.3s ease;
 }
 
 .main-container {
@@ -382,6 +392,15 @@ watch(() => route.path, () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* 当侧边栏折叠时的样式 */
+.layout-aside.collapsed {
+  width: 64px;
+}
+
+.layout-main.collapsed {
+  margin-left: 64px;
 }
 
 /* 响应式设计 */
@@ -403,16 +422,20 @@ watch(() => route.path, () => {
     padding: 4px 8px;
   }
   
-  .layout-main {
-    padding: 16px;
+  .main-content {
+    margin-top: 56px;
   }
   
   .layout-aside {
-    position: fixed;
-    left: 0;
-    top: 64px;
-    bottom: 0;
-    z-index: 99;
+    top: 56px;
+  }
+  
+  .layout-main {
+    margin-left: 0;
+  }
+  
+  .layout-aside.collapsed {
+    transform: translateX(-100%);
   }
 }
 </style> 
