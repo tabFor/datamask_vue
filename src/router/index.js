@@ -95,7 +95,6 @@ const routes = [
         component: () => import('@/components/PresidioTest.vue'),
         meta: {
           requiresAuth: true,
-          allowedRoles: [USER_ROLES.ADMIN],
           title: 'Presidio测试',
           skeletonType: 'form'
         }

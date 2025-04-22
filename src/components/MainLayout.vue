@@ -81,7 +81,7 @@
             <template #title>首页</template>
           </el-menu-item>
 
-          <el-sub-menu index="data-management">
+          <el-sub-menu index="data-management" v-if="showDataManagement">
             <template #title>
               <el-icon><DataAnalysis /></el-icon>
               <span>数据管理</span>
@@ -100,9 +100,14 @@
             </el-menu-item>
           </el-sub-menu>
 
-          <el-menu-item index="/analysis">
+          <el-menu-item index="/analysis" v-if="showDataAnalysis">
             <el-icon><PieChart /></el-icon>
             <template #title>数据分析</template>
+          </el-menu-item>
+
+          <el-menu-item index="/presidio-test">
+            <el-icon><Monitor /></el-icon>
+            <template #title>Presidio测试</template>
           </el-menu-item>
 
           <el-sub-menu index="system" v-if="isAdmin">
@@ -159,7 +164,8 @@ import {
   PieChart, 
   Setting,
   Expand,
-  Fold
+  Fold,
+  Monitor
 } from '@element-plus/icons-vue';
 import { USER_ROLES } from '@/utils/permission';
 import SkeletonWrapper from './SkeletonWrapper.vue';
@@ -192,6 +198,26 @@ const userRoleText = computed(() => {
 // 判断是否为管理员
 const isAdmin = computed(() => {
   return userRole.value === USER_ROLES.ADMIN;
+});
+
+// 判断是否为数据分析师
+const isAnalyst = computed(() => {
+  return userRole.value === USER_ROLES.DATA_ANALYST;
+});
+
+// 判断是否为数据操作员
+const isOperator = computed(() => {
+  return userRole.value === USER_ROLES.DATA_OPERATOR;
+});
+
+// 判断是否显示数据管理菜单
+const showDataManagement = computed(() => {
+  return isAdmin.value || isOperator.value;
+});
+
+// 判断是否显示数据分析菜单
+const showDataAnalysis = computed(() => {
+  return isAdmin.value || isAnalyst.value;
 });
 
 // 当前激活的菜单
